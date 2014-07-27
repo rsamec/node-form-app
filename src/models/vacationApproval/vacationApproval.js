@@ -84,7 +84,6 @@ var VacationApproval;
         function BusinessRules(Data, paramService) {
             this.Data = Data;
             this.paramService = paramService;
-            this.CLASS_NAME = 'Person';
             //assign rule to data context
             this.MainValidator = this.createMainValidator().CreateRule("Data");
 

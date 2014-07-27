@@ -1,8 +1,8 @@
-///<reference path='typings/node-form/node-form.d.ts'/>
+///<reference path='src/typings/node-form/node-form.d.ts'/>
 ///<reference path='typings/node/node.d.ts'/>
 ///<reference path='typings/i18n-2/i18n-2.d.ts'/>
-///<reference path='typings/underscore/underscore.d.ts'/>
-///<reference path='typings/moment/moment.d.ts'/>
+///<reference path='src/typings/underscore/underscore.d.ts'/>
+///<reference path='src/typings/moment/moment.d.ts'/>
 ///<reference path='src/models/vacationApproval/vacationApproval.d.ts'/>
 var moment = require('moment');
 var _ = require('underscore');

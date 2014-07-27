@@ -1,6 +1,6 @@
-/// <reference path="../../../typings/moment/moment.d.ts" />
-/// <reference path="../../../typings/underscore/underscore.d.ts" />
-/// <reference path="../../../typings/node-form/node-form.d.ts" />
+/// <reference path="../../typings/moment/moment.d.ts" />
+/// <reference path="../../typings/underscore/underscore.d.ts" />
+/// <reference path="../../typings/node-form/node-form.d.ts" />
 declare module VacationApproval {
     class MyCustomValidator {
         public isAcceptable(s: any): boolean;
@@ -45,7 +45,7 @@ declare module VacationApproval {
         Checked: boolean;
         FirstName: string;
         LastName: string;
-        Email: string;
+        Email?: string;
     }
 }
 declare module VacationApproval {
@@ -58,7 +58,6 @@ declare module VacationApproval {
     class BusinessRules {
         public Data: IVacationApprovalData;
         private paramService;
-        public CLASS_NAME: string;
         public EmployeeValidator: any;
         public Deputy1Validator: any;
         public Deputy2Validator: any;

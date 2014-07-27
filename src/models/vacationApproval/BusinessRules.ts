@@ -1,6 +1,6 @@
-///<reference path='../../../typings/moment/moment.d.ts'/>
-///<reference path='../../../typings/underscore/underscore.d.ts'/>
-///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../typings/moment/moment.d.ts'/>
+///<reference path='../../typings/underscore/underscore.d.ts'/>
+///<reference path='../../typings/node-form/node-form.d.ts'/>
 
 ///<reference path='MyCustomValidator.ts'/>
 ///<reference path='Data.ts'/>
@@ -15,8 +15,6 @@ module VacationApproval {
      **/
 
     export class BusinessRules {
-
-        public CLASS_NAME:string = 'Person';
 
         public EmployeeValidator;
         public Deputy1Validator;
@@ -193,8 +191,8 @@ module VacationApproval {
     }
 }
 
-//import moment = require('moment');
-//import _ = require('underscore');
-//import Validation = require('node-form');
+//var moment = require('moment');
+//var _ = require('underscore');
+//var Validation = require('node-form');
 //
 //module.exports = VacationApproval;
