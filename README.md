@@ -1,7 +1,68 @@
 node-form-app
 =============
 
-Demo for form validation engine
+Demo for form validation engine using NodeJS. This demo demostrates
+
++   define business rules for vacation request
++   how to use these business rules
++   how to display errors for different languages
+
+## Business rules for vacation
+
+Vacation request - basic business rules
+
++   name -> first name + last name is required
++   duration
+    +   from and to is required
+    +   from and to must be valid dates (expect weekends)
+    +   from and to must be greater or queal today
+    +   from and to must be less or queal 1 year
+    +   from must be at least one day before to
++   deputy
+    +   first name + last name of deputy is required
+    +   contact (email) is required
+    +   can not select deputy have approved vacation at the same days (async) - not implemented yet
++   at least one deputy is required -> second deputy is optional
+
+
+## Install
+
+Download repository or run
+```bash
+git clone https://github.com/rsamec/node-form-app
+```
+
+To run example
+
+```bash
+npm install
+node index.js
+```
+
+## Typescript source compilation
+
+To compile index
+
+```bash
+tsc index.ts --t ES5
+```
+
+To compile business rules
+
+```bash
+tsc models/vacationApproval/BusinessRules.ts --t ES5 --out vacationApproval.js
+```
+
+To transform form module pattern to CommonJS module -> add or uncomment these  rows
+
+```javascript
+var moment = require('moment');
+var _ = require('underscore');
+var Validation = require('node-form');
+
+module.exports = VacationApproval;
+```javascript
+
 
 ## Examle usage
 
