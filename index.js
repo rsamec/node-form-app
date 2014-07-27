@@ -3,14 +3,20 @@
 ///<reference path='typings/i18n-2/i18n-2.d.ts'/>
 ///<reference path='typings/underscore/underscore.d.ts'/>
 ///<reference path='typings/moment/moment.d.ts'/>
-///<reference path='models/vacationApproval/vacationApproval.d.ts'/>
+///<reference path='src/models/vacationApproval/vacationApproval.d.ts'/>
 var moment = require('moment');
 var _ = require('underscore');
 var i18n = require('i18n-2');
 var Validation = require('node-form');
-var VacationApproval = require('./models/vacationApproval/vacationApproval.js');
+var VacationApproval = require('./src/models/vacationApproval/vacationApproval.js');
 
-var local = new i18n({ locales: ['en', 'cz'], extension: '.json' });
+//prepeare localization
+var local = new i18n({
+    locales: ['en', 'cz'],
+    directory: 'src/models/vacationApproval/locales',
+    extension: '.json' });
+
+//set default culture
 local.setLocale('en');
 
 //create test data
