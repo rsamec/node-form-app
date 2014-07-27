@@ -1,16 +1,16 @@
-///<reference path='src/typings/node-form/node-form.d.ts'/>
+///<reference path='typings/node-form/node-form.d.ts'/>
 ///<reference path='typings/node/node.d.ts'/>
 ///<reference path='typings/i18n-2/i18n-2.d.ts'/>
-///<reference path='src/typings/underscore/underscore.d.ts'/>
-///<reference path='src/typings/moment/moment.d.ts'/>
+///<reference path='typings/underscore/underscore.d.ts'/>
+///<reference path='typings/moment/moment.d.ts'/>
 
-///<reference path='src/models/vacationApproval/vacationApproval.d.ts'/>
+///<reference path='dist/vacationApproval/vacationApproval.d.ts'/>
 
 import moment = require('moment');
 import _ = require('underscore');
 import i18n = require('i18n-2');
 import Validation = require('node-form');
-var VacationApproval = require('./src/models/vacationApproval/vacationApproval.js');
+var VacationApproval = require('./dist/vacationApproval/vacationApproval.js');
 
 //prepeare localization
 var local  = new i18n({

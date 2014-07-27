@@ -30,7 +30,7 @@
     "test",
     "tests",
     "typings",
-    "src/typings",
+    "src",
     "index.*"
   ]
 }
