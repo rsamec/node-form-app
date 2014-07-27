@@ -32,6 +32,7 @@
     "typings",
     "src",
     "docs",
+    "GruntFile.js",
     "index.*"
   ]
 }
