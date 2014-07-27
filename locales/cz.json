@@ -1,0 +1,28 @@
+{
+	"Employee": "Zaměstnanec",
+	"Name": "Jméno a příjmení",
+	"FirstName": "Jméno",
+	"LastName": "Příjmení",
+	"Duration": "Doba",
+	"From": "Od",
+	"To": "Do",
+	"Deputy1": "Zástupce",
+	"Deputy2": "Další zástupce",
+	"DiffNames": "Duplicitní jména",
+	"BeforeDate": {
+		"Format": "DD.MM.YYYY",
+		"Msg": "Datum '{From}' musí být před datem '{To}'."
+	},
+	"dateCompareExt": {
+		"Format": "DD.MM.YYYY",
+		"Msg": "Datum musí být mezi ('{From}' - '{To}')."
+	},
+	"DAYS_TEXT": "den(dnů)",
+	"Hello": "Ahoj",
+	"required": "Toto pole je povinné",
+	"maxlength": "Prosím, zadejte nejvíce {MaxLength} znaků.",
+	"Data": "Data",
+	"Email": "Email",
+	"VacationDuration": "Doba dovolené",
+	"NoErrors": "Neexistují žádné chyby."
+}
