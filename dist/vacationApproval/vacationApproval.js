@@ -1,6 +1,6 @@
-///<reference path='../../typings/moment/moment.d.ts'/>
-///<reference path='../../typings/underscore/underscore.d.ts'/>
-///<reference path='../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/moment/moment.d.ts'/>
+///<reference path='../../../typings/underscore/underscore.d.ts'/>
+///<reference path='../../../typings/node-form/node-form.d.ts'/>
 var VacationApproval;
 (function (VacationApproval) {
     var MyCustomValidator = (function () {
@@ -67,9 +67,9 @@ var VacationApproval;
     })();
     VacationApproval.MyCustomValidator = MyCustomValidator;
 })(VacationApproval || (VacationApproval = {}));
-///<reference path='../../typings/moment/moment.d.ts'/>
-///<reference path='../../typings/underscore/underscore.d.ts'/>
-///<reference path='../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/moment/moment.d.ts'/>
+///<reference path='../../../typings/underscore/underscore.d.ts'/>
+///<reference path='../../../typings/node-form/node-form.d.ts'/>
 ///<reference path='MyCustomValidator.ts'/>
 ///<reference path='Data.ts'/>
 var VacationApproval;
