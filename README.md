@@ -144,8 +144,7 @@ Data:
 --------------------------------------------------------------------------------------------------
 Neexistují žádné chyby.
 
-```bash
-
+```
 
 #### These is an example of function how to format errors output.
 
