@@ -141,17 +141,6 @@ var VacationApproval;
             var durationValidator = this.createDurationValidator();
             validator.ValidatorFor("Duration", durationValidator);
 
-            //separate custom shared validator
-            //            var diffNamesFce = function (args:Validation.IError) {
-            //                args.HasError = false;
-            //                args.ErrorMessage = "";
-            //                if (!this.Deputy2.Checked) return;
-            //                if (this.Deputy1.FirstName == this.Deputy2.FirstName && this.Deputy1.LastName == this.Deputy2.LastName) {
-            //                    args.HasError = true;
-            //                    args.ErrorMessage = "Deputies can not have the same names.";
-            //                    return;
-            //                }
-            //            }
             var selfService = this.vacationDeputyService;
             var deputyConflictFce = function (args) {
                 var deferred = Q.defer();
@@ -182,15 +171,23 @@ var VacationApproval;
             //create custom composite validator
             var validator = new Validation.AbstractValidator();
 
+            //create validators
             var required = new Validation.RequiredValidator();
-
             var greaterThanToday = new VacationApproval.FromToDateValidator();
             greaterThanToday.FromOperator = 4 /* GreaterThanEqual */;
             greaterThanToday.From = new Date();
-            greaterThanToday.IgnoreTime = true;
             greaterThanToday.ToOperator = 1 /* LessThanEqual */;
             greaterThanToday.To = moment(new Date()).add({ year: 1 }).toDate();
+            greaterThanToday.IgnoreTime = true;
 
+            //assign validators to properties
+            validator.RuleFor("From", required);
+            validator.RuleFor("To", required);
+
+            validator.RuleFor("From", greaterThanToday);
+            validator.RuleFor("To", greaterThanToday);
+
+            //create custom message for validation
             var customErrorMessage = function (config, args) {
                 var msg = config["Msg"];
 
@@ -209,14 +206,7 @@ var VacationApproval;
                 return Validation.StringFce.format(msg, args);
             };
 
-            validator.RuleFor("From", required);
-            validator.RuleFor("To", required);
-
-            validator.RuleFor("From", greaterThanToday);
-            validator.RuleFor("To", greaterThanToday);
-
-            //
-            //create named shared validaton
+            //create validator function
             var isBeforeFce = function (args) {
                 args.HasError = false;
                 args.ErrorMessage = "";
@@ -227,7 +217,7 @@ var VacationApproval;
                 var to = moment(this.To).clone();
                 if (moment(this.From).startOf('day').isAfter(moment(to).add({ days: -1 }).startOf('day'))) {
                     args.HasError = true;
-                    args.ErrorMessage = Validation.StringFce.format("Date from '{From}' must be before date to '{To}'.", this);
+                    args.ErrorMessage = customErrorMessage({ Msg: "Date from '{From}' must be before date to '{To}'.", Format: 'MM/DD/YYYY' }, this);
                     args.TranslateArgs = { TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage };
                     return;
                 }
@@ -242,9 +232,11 @@ var VacationApproval;
                     args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
                 }
             };
+
+            //wrap validator function to named shared validation
             var validatorFce = { Name: "VacationDuration", ValidationFce: isBeforeFce };
 
-            //assign shared validation to fields
+            //assigned shared validation to properties
             validator.ValidationFor("From", validatorFce);
             validator.ValidationFor("To", validatorFce);
 
@@ -255,12 +247,13 @@ var VacationApproval;
             //create custom composite validator
             var personValidator = new Validation.AbstractValidator();
 
-            //create field validators
+            //create validators
             var required = new Validation.RequiredValidator();
             var email = new Validation.EmailValidator();
             var maxLength = new Validation.MaxLengthValidator();
             maxLength.MaxLength = 15;
 
+            //assign validators to properties
             personValidator.RuleFor("FirstName", required);
             personValidator.RuleFor("FirstName", maxLength);
 

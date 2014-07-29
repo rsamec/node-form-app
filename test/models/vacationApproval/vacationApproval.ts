@@ -498,4 +498,38 @@ describe('business rules for vacation approval', function () {
         });
 
     });
+
+    describe('complex test', function () {
+
+            it('fill all fields correctly', function () {
+                //when
+                data = {
+                    Employee: {
+                        FirstName: 'John',
+                        LastName: 'Smith'
+                    },
+                    Deputy1 : {
+                        FirstName: 'Paul',
+                        LastName: 'Neuman',
+                        Email:'pneuman@gmai.com'
+                    },
+                    Duration : {
+                        From : new Date(),
+                        To: moment(new Date()).add('days',1).toDate()
+                    }
+                };
+
+                businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                console.log(businessRules.Errors.ErrorMessage);
+                expect(businessRules.Errors.HasErrors).to.equal(false);
+
+            });
+
+
+    });
 });
