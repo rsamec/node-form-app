@@ -48,7 +48,7 @@ module.exports = function (grunt) {
                 options: {
                     module: 'commonjs',
                     out: './docs',
-                    name: 'ValidationEngine',
+                    name: 'Business rules',
                     target: 'es5'
                 },
                 src: ['./src/**/*']

@@ -1,6 +1,10 @@
+///<reference path='../../../typings/q/q.d.ts'/>
+
 module VacationApproval {
 
-    //Data interface
+    /**
+     * Data structure for vacation approval.
+     */
     export interface IVacationApprovalData {
         Employee?:IPerson;
         Deputy1?:IPerson;
@@ -9,15 +13,29 @@ module VacationApproval {
         Comment?:string;
     }
 
+    /**
+     * Data structure for vacation duration.
+     */
     export interface IDuration {
         From:Date;
         To:Date;
         Days?:number;
     }
+
+    /**
+     * Data structure for person.
+     */
     export interface IPerson {
-        Checked:boolean;
+        Checked?:boolean;
         FirstName:string;
         LastName:string;
         Email?:string;
+    }
+
+    /**
+     * External service that return true if there is conflict with deputies approved days.
+     */
+    export interface IVacationDeputyService {
+        isAcceptable(data:VacationApproval.IVacationApprovalData):Q.Promise<boolean>
     }
 }

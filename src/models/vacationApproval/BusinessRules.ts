@@ -2,31 +2,59 @@
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
 
-///<reference path='MyCustomValidator.ts'/>
+///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 
 module VacationApproval {
 
     /**
-     * YUIDoc_comment
+     * Business rules for vacation approval.
      *
-     * @class Person
+     * @class
      * @constructor
      **/
-
     export class BusinessRules {
 
+        /**
+         * Business rules for employee requested the vacation.
+         */
         public EmployeeValidator;
+
+        /**
+         * Business rules for first deputy for employee having the vacation.
+         */
         public Deputy1Validator;
+
+        /**
+         * Business rules for second deputy for employee having the vacation.
+         */
         public Deputy2Validator;
+
+        /**
+         * Business rules for duration of vacation.
+         */
         public DurationValidator;
-        public DeputyDiffNamesValidator;
 
 
+        /**
+         *  Deputy conflict - employee that have approved vacation and its someones's deputy at the same days.
+         */
+        public DeputyConflictsValidator;
+
+
+        /**
+         * All business rules for the vacation approval.
+         */
         public MainValidator;
+
+
+        /**
+         * Return the state of all business rules.
+         */
         public Errors;
 
-        constructor(public Data:IVacationApprovalData, private paramService) {
+
+        constructor(public Data:IVacationApprovalData, private vacationDeputyService:IVacationDeputyService) {
 
             //assign rule to data context
             this.MainValidator = this.createMainValidator().CreateRule("Data");
@@ -36,7 +64,7 @@ module VacationApproval {
             this.Deputy1Validator = this.MainValidator.Children["Deputy1"];
             this.Deputy2Validator = this.MainValidator.Children["Deputy2"];
             this.DurationValidator = this.MainValidator.Children["Duration"];
-            this.DeputyDiffNamesValidator = this.MainValidator.Validators["DiffNames"];
+            this.DeputyConflictsValidator = this.MainValidator.Validators["DeputyConflict"];
 
             //enable optional on the upper level
             this.EmployeeValidator.Rules["Email"].Optional = function () {
@@ -56,9 +84,17 @@ module VacationApproval {
             this.Errors = this.MainValidator.ValidationResult;
         }
 
+        /**
+         * Executes all business rules.
+         */
         public Validate():void {
             this.MainValidator.ValidateAll(this.Data);
+            this.DeputyConflictsValidator.ValidateAsync(this.Data);
         }
+
+//        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
+//            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
+//        }
 
         private createMainValidator():Validation.IAbstractValidator<IVacationApprovalData> {
 
@@ -76,21 +112,40 @@ module VacationApproval {
 
 
             //separate custom shared validator
-            var diffNamesFce = function (args:Validation.IError) {
-                args.HasError = false;
-                args.ErrorMessage = "";
-                if (!this.Deputy2.Checked) return;
-                if (this.Deputy1.FirstName == this.Deputy2.FirstName && this.Deputy1.LastName == this.Deputy2.LastName) {
-                    args.HasError = true;
-                    args.ErrorMessage = "Deputies can not have the same names.";
-                    return;
-                }
+//            var diffNamesFce = function (args:Validation.IError) {
+//                args.HasError = false;
+//                args.ErrorMessage = "";
+//                if (!this.Deputy2.Checked) return;
+//                if (this.Deputy1.FirstName == this.Deputy2.FirstName && this.Deputy1.LastName == this.Deputy2.LastName) {
+//                    args.HasError = true;
+//                    args.ErrorMessage = "Deputies can not have the same names.";
+//                    return;
+//                }
+//            }
+            var selfService = this.vacationDeputyService;
+            var deputyConflictFce = function(args:Validation.IError){
+                var deferred = Q.defer();
+
+                selfService.isAcceptable(this).then(
+                    function(result){
+                        args.HasError = false;
+                        args.ErrorMessage = "";
+
+                        if (!result){
+                            args.HasError = true;
+                            args.ErrorMessage = "Deputies conflict. Select another deputy.";
+                        }
+                        deferred.resolve(undefined);
+                    });
+
+
+                 return deferred.promise;
             }
 
-            var diffNames = {Name: "DiffNames", ValidationFce: diffNamesFce};
+            var diffNames = {Name: "DeputyConflict", AsyncValidationFce: deputyConflictFce};
 
             //shared validation
-            validator.ValidationFor("DeputyShared", diffNames);
+            validator.ValidationFor("DeputyConflict", diffNames);
 
 
             return validator;
@@ -103,7 +158,7 @@ module VacationApproval {
 
             var required = new Validation.RequiredValidator();
 
-            var greaterThanToday = new MyCustomValidator();
+            var greaterThanToday = new FromToDateValidator();
             greaterThanToday.FromOperator = Validation.CompareOperator.GreaterThanEqual;
             greaterThanToday.From = new Date();
             greaterThanToday.IgnoreTime = true;
@@ -152,6 +207,16 @@ module VacationApproval {
                     args.TranslateArgs = {TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage};
                     return;
                 }
+
+                var maxDays:number = 30
+                //maximal duration
+                if (moment(this.To).startOf('day').diff(moment(this.From).startOf('day'),'days') > maxDays) {
+                    args.HasError = true;
+                    var messageArgs = {MaxDays:maxDays};
+                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
+                    args.TranslateArgs = {TranslateId: 'MaxDuration', MessageArgs: messageArgs};
+
+                }
             }
             var validatorFce = {Name: "VacationDuration", ValidationFce: isBeforeFce};
 
@@ -191,8 +256,8 @@ module VacationApproval {
     }
 }
 
-//var moment = require('moment');
+//var moment = require('moment-range');
 //var _ = require('underscore');
+//var Q = require('q');
 //var Validation = require('node-form');
-//
 //module.exports = VacationApproval;

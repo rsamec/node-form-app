@@ -4,7 +4,11 @@
 
 module VacationApproval {
 
-   export class MyCustomValidator {
+    /**
+     *  It validates passed date against constant from and to interval.
+     *  You can check that passed date is greater than now and lower than one year for now.
+     */
+   export class FromToDateValidator implements Validation.IPropertyValidator {
 
         public isAcceptable(s:any) {
             //if date to compare is not specified - defaults to compare against now
@@ -49,6 +53,12 @@ module VacationApproval {
             return isValid;
         }
 
+        /**
+         * It formats error message.
+         * @param config localization strings
+         * @param args dynamic parameters
+         * @returns {string} error message
+         */
         public customMessage(config, args):string {
             var msg = config["Msg"]
 
@@ -69,7 +79,9 @@ module VacationApproval {
 
         tagName = "dateCompareExt";
 
-
+        /**
+         *  Ignore time part of date when compare dates.
+         */
         public IgnoreTime:boolean;
 
         /**

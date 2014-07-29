@@ -14,10 +14,12 @@ Vacation request - basic business rules
 +   name -> first name + last name is required
 +   duration
     +   from and to is required
-    +   from and to must be valid dates (expect weekends)
-    +   from and to must be greater or queal today
-    +   from and to must be less or queal 1 year
+    +   from and to must be valid dates
+    +   from and to must be greater or equal today
+    +   from and to must be less or equal 1 year
     +   from must be at least one day before to
+    +   minimal duration is 1 day
+    +   maximal duration is 30 days
 +   deputy
     +   first name + last name of deputy is required
     +   contact (email) is required
@@ -64,7 +66,7 @@ module.exports = VacationApproval;
 ```javascript
 
 
-## Examle usage
+## Example usage
 
 
 ```typescript
@@ -256,4 +258,49 @@ var displayErrors = function(node, indent) {
         }
     }
 }
+```
+
+
+## Tests
+
+All business rules for vacation are under tests.
+
+
+```bash
+
+ business rules for vacation approval
+    employee
+      first name + last name
+        √ fill no names
+        √ fill empty names
+        √ fill long names
+        √ fill some names
+    duration
+      from and to fields
+        √ fill no dates
+        √ fill empty dates
+        √ fill dates before today
+        √ fill dates qreater than one year from today
+        √ fill dates qreater than one year from today
+        √ fill today
+        √ fill one year from today
+      duration in days
+        √ zero duration
+        √ negative duration
+        √ minimal duration
+        √ maximal duration 30 days
+        √ too big duration 31 days
+    deputy
+      first name + last name
+        √ fill no names
+        √ fill empty names
+        √ fill long names
+        √ fill some names
+      email
+        √ fill no email
+        √ fill wrong email
+        √ fill some email
+    deputy check with list of all approved vacations that they are not in conflict
+      √ fill employee with vacation and confict in days (1006ms)
+      √ fill employee with vacation and confict in days (1012ms)
 ```

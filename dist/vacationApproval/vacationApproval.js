@@ -3,11 +3,15 @@
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
 var VacationApproval;
 (function (VacationApproval) {
-    var MyCustomValidator = (function () {
-        function MyCustomValidator() {
+    /**
+    *  It validates passed date against constant from and to interval.
+    *  You can check that passed date is greater than now and lower than one year for now.
+    */
+    var FromToDateValidator = (function () {
+        function FromToDateValidator() {
             this.tagName = "dateCompareExt";
         }
-        MyCustomValidator.prototype.isAcceptable = function (s) {
+        FromToDateValidator.prototype.isAcceptable = function (s) {
             //if date to compare is not specified - defaults to compare against now
             if (!_.isDate(s))
                 return false;
@@ -26,7 +30,7 @@ var VacationApproval;
             return isValid;
         };
 
-        MyCustomValidator.prototype.isValid = function (now, then, compareOperator) {
+        FromToDateValidator.prototype.isValid = function (now, then, compareOperator) {
             var isValid = false;
             if (this.IgnoreTime) {
                 then = then.startOf('day');
@@ -46,7 +50,13 @@ var VacationApproval;
             return isValid;
         };
 
-        MyCustomValidator.prototype.customMessage = function (config, args) {
+        /**
+        * It formats error message.
+        * @param config localization strings
+        * @param args dynamic parameters
+        * @returns {string} error message
+        */
+        FromToDateValidator.prototype.customMessage = function (config, args) {
             var msg = config["Msg"];
 
             var format = config["Format"];
@@ -63,27 +73,28 @@ var VacationApproval;
             msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
             return Validation.StringFce.format(msg, args);
         };
-        return MyCustomValidator;
+        return FromToDateValidator;
     })();
-    VacationApproval.MyCustomValidator = MyCustomValidator;
+    VacationApproval.FromToDateValidator = FromToDateValidator;
 })(VacationApproval || (VacationApproval = {}));
+///<reference path='../../../typings/q/q.d.ts'/>
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
-///<reference path='MyCustomValidator.ts'/>
+///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 var VacationApproval;
 (function (VacationApproval) {
     /**
-    * YUIDoc_comment
+    * Business rules for vacation approval.
     *
-    * @class Person
+    * @class
     * @constructor
     **/
     var BusinessRules = (function () {
-        function BusinessRules(Data, paramService) {
+        function BusinessRules(Data, vacationDeputyService) {
             this.Data = Data;
-            this.paramService = paramService;
+            this.vacationDeputyService = vacationDeputyService;
             //assign rule to data context
             this.MainValidator = this.createMainValidator().CreateRule("Data");
 
@@ -91,7 +102,7 @@ var VacationApproval;
             this.Deputy1Validator = this.MainValidator.Children["Deputy1"];
             this.Deputy2Validator = this.MainValidator.Children["Deputy2"];
             this.DurationValidator = this.MainValidator.Children["Duration"];
-            this.DeputyDiffNamesValidator = this.MainValidator.Validators["DiffNames"];
+            this.DeputyConflictsValidator = this.MainValidator.Validators["DeputyConflict"];
 
             //enable optional on the upper level
             this.EmployeeValidator.Rules["Email"].Optional = function () {
@@ -107,10 +118,17 @@ var VacationApproval;
 
             this.Errors = this.MainValidator.ValidationResult;
         }
+        /**
+        * Executes all business rules.
+        */
         BusinessRules.prototype.Validate = function () {
             this.MainValidator.ValidateAll(this.Data);
+            this.DeputyConflictsValidator.ValidateAsync(this.Data);
         };
 
+        //        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
+        //            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
+        //        }
         BusinessRules.prototype.createMainValidator = function () {
             //create custom validator
             var validator = new Validation.AbstractValidator();
@@ -124,22 +142,38 @@ var VacationApproval;
             validator.ValidatorFor("Duration", durationValidator);
 
             //separate custom shared validator
-            var diffNamesFce = function (args) {
-                args.HasError = false;
-                args.ErrorMessage = "";
-                if (!this.Deputy2.Checked)
-                    return;
-                if (this.Deputy1.FirstName == this.Deputy2.FirstName && this.Deputy1.LastName == this.Deputy2.LastName) {
-                    args.HasError = true;
-                    args.ErrorMessage = "Deputies can not have the same names.";
-                    return;
-                }
+            //            var diffNamesFce = function (args:Validation.IError) {
+            //                args.HasError = false;
+            //                args.ErrorMessage = "";
+            //                if (!this.Deputy2.Checked) return;
+            //                if (this.Deputy1.FirstName == this.Deputy2.FirstName && this.Deputy1.LastName == this.Deputy2.LastName) {
+            //                    args.HasError = true;
+            //                    args.ErrorMessage = "Deputies can not have the same names.";
+            //                    return;
+            //                }
+            //            }
+            var selfService = this.vacationDeputyService;
+            var deputyConflictFce = function (args) {
+                var deferred = Q.defer();
+
+                selfService.isAcceptable(this).then(function (result) {
+                    args.HasError = false;
+                    args.ErrorMessage = "";
+
+                    if (!result) {
+                        args.HasError = true;
+                        args.ErrorMessage = "Deputies conflict. Select another deputy.";
+                    }
+                    deferred.resolve(undefined);
+                });
+
+                return deferred.promise;
             };
 
-            var diffNames = { Name: "DiffNames", ValidationFce: diffNamesFce };
+            var diffNames = { Name: "DeputyConflict", AsyncValidationFce: deputyConflictFce };
 
             //shared validation
-            validator.ValidationFor("DeputyShared", diffNames);
+            validator.ValidationFor("DeputyConflict", diffNames);
 
             return validator;
         };
@@ -150,7 +184,7 @@ var VacationApproval;
 
             var required = new Validation.RequiredValidator();
 
-            var greaterThanToday = new VacationApproval.MyCustomValidator();
+            var greaterThanToday = new VacationApproval.FromToDateValidator();
             greaterThanToday.FromOperator = 4 /* GreaterThanEqual */;
             greaterThanToday.From = new Date();
             greaterThanToday.IgnoreTime = true;
@@ -197,6 +231,16 @@ var VacationApproval;
                     args.TranslateArgs = { TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage };
                     return;
                 }
+
+                var maxDays = 30;
+
+                //maximal duration
+                if (moment(this.To).startOf('day').diff(moment(this.From).startOf('day'), 'days') > maxDays) {
+                    args.HasError = true;
+                    var messageArgs = { MaxDays: maxDays };
+                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
+                    args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
+                }
             };
             var validatorFce = { Name: "VacationDuration", ValidationFce: isBeforeFce };
 
@@ -232,8 +276,8 @@ var VacationApproval;
     })();
     VacationApproval.BusinessRules = BusinessRules;
 })(VacationApproval || (VacationApproval = {}));
-var moment = require('moment');
+var moment = require('moment-range');
 var _ = require('underscore');
+var Q = require('q');
 var Validation = require('node-form');
-
 module.exports = VacationApproval;
