@@ -11,12 +11,20 @@ import _ = require('underscore');
 import i18n = require('i18n-2');
 import Validation = require('node-form');
 var VacationApproval = require('./dist/vacationApproval/vacationApproval.js');
+var FakeVacationDeputyService = require('./test/models/vacationApproval/FakeVacationDeputyService.js');
+var en = require('node-form/i18n/messages_en.js');
+var cz = require('node-form/i18n/messages_cs.js');
+var de = require('node-form/i18n/messages_de.js');
 
 //prepeare localization
 var local  = new i18n({
-    locales:['en','cz'],
+    locales:['en','cz','de'],
     directory: 'src/models/vacationApproval/locales',
     extension:'.json'});
+
+_.extend(local.locales['en'],en.ValidationMessages);
+_.extend(local.locales['cz'],cz.ValidationMessages);
+_.extend(local.locales['de'],de.ValidationMessages);
 
 
 //set default culture
@@ -26,7 +34,7 @@ local.setLocale('en');
 var data:VacationApproval.IVacationApprovalData = {};
 
 //business rules for vacation approval
-var businessRules = new VacationApproval.BusinessRules(data,undefined);
+var businessRules = new VacationApproval.BusinessRules(data,new FakeVacationDeputyService());
 
 //execute validation
 businessRules.Validate();
@@ -36,7 +44,7 @@ var displayErrors = function(node, indent) {
 
     if (indent == 0){
         console.log(Array(50).join("--"))
-        console.log("-- Errors");
+        console.log("-- " + local.__("Errors"));
         console.log(Array(50).join("--"))
     }
 
@@ -54,19 +62,24 @@ var displayErrors = function(node, indent) {
 
                 //display validation failure - process translateArgs
                 var failure:Validation.IErrorTranslateArgs = childError.TranslateArgs;
-
-                //custom messages
-                if (failure["CustomMessage"] == undefined) {
-                    //call standard translation
-                    msg += failure == undefined ? failure.TranslateId : Validation.StringFce.format(local.__(failure.TranslateId), failure.MessageArgs);
+                if (failure == undefined) {
+                    msg += childError.ErrorMessage;
                 }
                 else {
-                    //call custom messages function - pass translation config and message args
-                    msg += failure == undefined ? failure.TranslateId : failure["CustomMessage"](local.__(failure.TranslateId), failure.MessageArgs);
+                    //custom messages
+                    if (failure["CustomMessage"] == undefined) {
+                        //call standard translation
+                        msg += failure == undefined ? failure.TranslateId : Validation.StringFce.format(local.__(failure.TranslateId), failure.MessageArgs);
+                    }
+                    else {
+                        //call custom messages function - pass translation config and message args
+                        msg += failure == undefined ? failure.TranslateId : failure["CustomMessage"](local.__(failure.TranslateId), failure.MessageArgs);
+                    }
                 }
-                console.log(Array(indent + 1).join("--") + msg);
+                msg += " ";
             }
         });
+        if (node.HasErrors)  console.log(Array(indent + 1).join("--") + msg);
     }
     else {
         //log name
@@ -106,7 +119,7 @@ data.Deputy1.LastName = "Smith";
 data.Deputy1.Email = "jsmith@gmail.com";
 
 data.Duration.From = moment(new Date()).add({days:1}).toDate();
-data.Duration.To = moment(new Date()).add({days:4}).toDate();
+data.Duration.To = moment(new Date()).add({days:3}).toDate();
 
 //execute validation
 businessRules.Validate();

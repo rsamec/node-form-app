@@ -32,6 +32,7 @@ var VacationApproval;
 
         FromToDateValidator.prototype.isValid = function (now, then, compareOperator) {
             var isValid = false;
+
             if (this.IgnoreTime) {
                 then = then.startOf('day');
                 now = now.startOf('day');
@@ -81,8 +82,274 @@ var VacationApproval;
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+var VacationApproval;
+(function (VacationApproval) {
+    /**
+    *  It validates if passed date is week day, for weekends returns not acceptable.
+    */
+    var IsWeekdayValidator = (function () {
+        function IsWeekdayValidator() {
+            this.tagName = "isWeekday";
+        }
+        IsWeekdayValidator.prototype.isAcceptable = function (s) {
+            //if date to compare is not specified - defaults to compare against now
+            if (!_.isDate(s))
+                return false;
+
+            var day = moment(s);
+
+            return !(day.isoWeekday() == 6 || day.isoWeekday() == 7);
+        };
+        return IsWeekdayValidator;
+    })();
+    VacationApproval.IsWeekdayValidator = IsWeekdayValidator;
+})(VacationApproval || (VacationApproval = {}));
+///<reference path='../../../typings/moment/moment.d.ts'/>
+///<reference path='../../../typings/underscore/underscore.d.ts'/>
+///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='FromToDateValidator.ts'/>
+///<reference path='IsWeekdayValidator.ts'/>
+///<reference path='Data.ts'/>
+var VacationApproval;
+(function (VacationApproval) {
+    var Duration = (function () {
+        function Duration(DataProvider) {
+            this.DataProvider = DataProvider;
+            _.mixin({
+                //returns true if source has all the properties(nested) of target.
+                contains: function (obj, target) {
+                    if (obj == null)
+                        return false;
+                    if (obj.length !== +obj.length)
+                        obj = _.values(obj);
+
+                    if (_.every(obj, function (item) {
+                        return moment.isMoment(item);
+                    })) {
+                        return _.any(obj, function (item) {
+                            return item.isSame(target);
+                        });
+                    } else {
+                        return _.indexOf(obj, target) >= 0;
+                    }
+                }
+            });
+        }
+        Object.defineProperty(Duration.prototype, "Data", {
+            get: function () {
+                return this.DataProvider.Duration;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "FromDatePart", {
+            get: function () {
+                return moment(this.Data.From).startOf('days');
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "ToDatePart", {
+            get: function () {
+                return moment(this.Data.To).startOf('days');
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "ExcludedDaysDatePart", {
+            get: function () {
+                return _.map(this.Data.ExcludedDays, function (item) {
+                    return moment(item).startOf('days');
+                });
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "FromRange", {
+            get: function () {
+                return moment().range(this.FromDatePart, this.ToDatePart);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "RangeDaysCount", {
+            get: function () {
+                return this.RangeDays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "RangeDays", {
+            get: function () {
+                var days = [];
+                this.FromRange.by('days', function (day) {
+                    days.push(day);
+                });
+                return days;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "ExcludedWeekdaysCount", {
+            get: function () {
+                return this.ExcludedWeekdays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "ExcludedWeekdays", {
+            get: function () {
+                var weekends = [];
+                this.FromRange.by('days', function (day) {
+                    if (day.isoWeekday() == 6 || day.isoWeekday() == 7)
+                        weekends.push(day);
+                });
+                return weekends;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "ExcludedDaysCount", {
+            get: function () {
+                return this.ExcludedDays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "ExcludedDays", {
+            get: function () {
+                if (this.Data.ExcludedDays == undefined || this.Data.ExcludedDays.length == 0)
+                    return this.ExcludedWeekdays;
+                return _.union(this.ExcludedWeekdays, this.ExcludedDaysDatePart);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "VacationDaysCount", {
+            /**
+            * Return the number of days of vacation.
+            */
+            get: function () {
+                return this.VacationDays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "VacationDays", {
+            get: function () {
+                return _.difference(this.RangeDays, this.ExcludedDays);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Duration.prototype.createDurationValidator = function () {
+            //create custom composite validator
+            var validator = new Validation.AbstractValidator();
+
+            //create validators
+            var required = new Validation.RequiredValidator();
+            var greaterThanToday = new VacationApproval.FromToDateValidator();
+            var weekDay = new VacationApproval.IsWeekdayValidator();
+
+            greaterThanToday.FromOperator = 4 /* GreaterThanEqual */;
+            greaterThanToday.From = new Date();
+            greaterThanToday.ToOperator = 1 /* LessThanEqual */;
+            greaterThanToday.To = moment(new Date()).add({ year: 1 }).toDate();
+            greaterThanToday.IgnoreTime = true;
+
+            //assign validators to properties
+            validator.RuleFor("From", required);
+            validator.RuleFor("To", required);
+
+            validator.RuleFor("From", weekDay);
+            validator.RuleFor("To", weekDay);
+
+            validator.RuleFor("From", greaterThanToday);
+            validator.RuleFor("To", greaterThanToday);
+
+            //create custom message for validation
+            var customErrorMessage = function (config, args) {
+                var msg = config["Msg"];
+
+                var format = config["Format"];
+                if (format != undefined) {
+                    _.extend(args, {
+                        FormatedFrom: moment(args.From).format(format),
+                        FormatedTo: moment(args.To).format(format),
+                        FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
+                    });
+                }
+
+                msg = msg.replace('From', 'FormatedFrom');
+                msg = msg.replace('To', 'FormatedTo');
+                msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
+                return Validation.StringFce.format(msg, args);
+            };
+
+            var self = this;
+
+            //create validator function
+            var vacationDurationFce = function (args) {
+                args.HasError = false;
+                args.ErrorMessage = "";
+
+                //no dates - > nothing to validate
+                if (!_.isDate(this.From) || !_.isDate(this.To))
+                    return;
+
+                if (self.FromDatePart.isAfter(self.ToDatePart)) {
+                    args.HasError = true;
+                    args.ErrorMessage = customErrorMessage({ Msg: "Date from '{From}' must be before date to '{To}'.", Format: 'MM/DD/YYYY' }, this);
+                    args.TranslateArgs = { TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage };
+                    return;
+                }
+
+                var maxDays = 25;
+
+                //maximal duration
+                if (self.VacationDaysCount > maxDays) {
+                    args.HasError = true;
+                    var messageArgs = { MaxDays: maxDays };
+                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
+                    args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
+                }
+
+                var diff = _.difference(self.ExcludedDaysDatePart, self.RangeDays);
+                if (diff.length != 0) {
+                    args.HasError = true;
+                    var messageArgs2 = { ExcludedDates: _.reduce(diff, function (memo, item) {
+                            return memo + item.format("MM/DD/YYYY");
+                        }) };
+                    args.ErrorMessage = Validation.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
+                    args.TranslateArgs = { TranslateId: 'ExcludedDays', MessageArgs: messageArgs2 };
+                }
+            };
+
+            //wrap validator function to named shared validation
+            var validatorFce = { Name: "VacationDuration", ValidationFce: vacationDurationFce };
+
+            //assigned shared validation to properties
+            validator.ValidationFor("From", validatorFce);
+            validator.ValidationFor("To", validatorFce);
+
+            return validator;
+        };
+        return Duration;
+    })();
+    VacationApproval.Duration = Duration;
+})(VacationApproval || (VacationApproval = {}));
+///<reference path='../../../typings/moment/moment.d.ts'/>
+///<reference path='../../../typings/underscore/underscore.d.ts'/>
+///<reference path='../../../typings/node-form/node-form.d.ts'/>
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
+///<reference path='Duration.ts'/>
 var VacationApproval;
 (function (VacationApproval) {
     /**
@@ -95,6 +362,8 @@ var VacationApproval;
         function BusinessRules(Data, vacationDeputyService) {
             this.Data = Data;
             this.vacationDeputyService = vacationDeputyService;
+            this.Duration = new VacationApproval.Duration(this.Data);
+
             //assign rule to data context
             this.MainValidator = this.createMainValidator().CreateRule("Data");
 
@@ -126,9 +395,13 @@ var VacationApproval;
             this.DeputyConflictsValidator.ValidateAsync(this.Data);
         };
 
-        //        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
-        //            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
-        //        }
+        /**
+        * Execute deputy conflicts validation.
+        */
+        BusinessRules.prototype.DeputyConflictsValidatorValidateAsync = function () {
+            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
+        };
+
         BusinessRules.prototype.createMainValidator = function () {
             //create custom validator
             var validator = new Validation.AbstractValidator();
@@ -138,7 +411,7 @@ var VacationApproval;
             validator.ValidatorFor("Deputy1", personValidator);
             validator.ValidatorFor("Deputy2", personValidator);
 
-            var durationValidator = this.createDurationValidator();
+            var durationValidator = this.Duration.createDurationValidator();
             validator.ValidatorFor("Duration", durationValidator);
 
             var selfService = this.vacationDeputyService;
@@ -163,82 +436,6 @@ var VacationApproval;
 
             //shared validation
             validator.ValidationFor("DeputyConflict", diffNames);
-
-            return validator;
-        };
-
-        BusinessRules.prototype.createDurationValidator = function () {
-            //create custom composite validator
-            var validator = new Validation.AbstractValidator();
-
-            //create validators
-            var required = new Validation.RequiredValidator();
-            var greaterThanToday = new VacationApproval.FromToDateValidator();
-            greaterThanToday.FromOperator = 4 /* GreaterThanEqual */;
-            greaterThanToday.From = new Date();
-            greaterThanToday.ToOperator = 1 /* LessThanEqual */;
-            greaterThanToday.To = moment(new Date()).add({ year: 1 }).toDate();
-            greaterThanToday.IgnoreTime = true;
-
-            //assign validators to properties
-            validator.RuleFor("From", required);
-            validator.RuleFor("To", required);
-
-            validator.RuleFor("From", greaterThanToday);
-            validator.RuleFor("To", greaterThanToday);
-
-            //create custom message for validation
-            var customErrorMessage = function (config, args) {
-                var msg = config["Msg"];
-
-                var format = config["Format"];
-                if (format != undefined) {
-                    _.extend(args, {
-                        FormatedFrom: moment(args.From).format(format),
-                        FormatedTo: moment(args.To).format(format),
-                        FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
-                    });
-                }
-
-                msg = msg.replace('From', 'FormatedFrom');
-                msg = msg.replace('To', 'FormatedTo');
-                msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-                return Validation.StringFce.format(msg, args);
-            };
-
-            //create validator function
-            var isBeforeFce = function (args) {
-                args.HasError = false;
-                args.ErrorMessage = "";
-
-                //no dates - > nothing to validate
-                if (!_.isDate(this.From) || !_.isDate(this.To))
-                    return;
-                var to = moment(this.To).clone();
-                if (moment(this.From).startOf('day').isAfter(moment(to).add({ days: -1 }).startOf('day'))) {
-                    args.HasError = true;
-                    args.ErrorMessage = customErrorMessage({ Msg: "Date from '{From}' must be before date to '{To}'.", Format: 'MM/DD/YYYY' }, this);
-                    args.TranslateArgs = { TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage };
-                    return;
-                }
-
-                var maxDays = 30;
-
-                //maximal duration
-                if (moment(this.To).startOf('day').diff(moment(this.From).startOf('day'), 'days') > maxDays) {
-                    args.HasError = true;
-                    var messageArgs = { MaxDays: maxDays };
-                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
-                    args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
-                }
-            };
-
-            //wrap validator function to named shared validation
-            var validatorFce = { Name: "VacationDuration", ValidationFce: isBeforeFce };
-
-            //assigned shared validation to properties
-            validator.ValidationFor("From", validatorFce);
-            validator.ValidationFor("To", validatorFce);
 
             return validator;
         };

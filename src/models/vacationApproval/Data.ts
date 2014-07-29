@@ -20,6 +20,7 @@ module VacationApproval {
         From:Date;
         To:Date;
         Days?:number;
+        ExcludedDays?:Array<Date>;
     }
 
     /**

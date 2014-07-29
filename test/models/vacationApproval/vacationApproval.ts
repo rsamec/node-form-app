@@ -13,61 +13,41 @@ import Q = require('q');
 
 var moment = require('moment');
 var VacationApproval = require('../../../dist/vacationApproval/vacationApproval.js');
+var FakeVacationDeputyService = require('./FakeVacationDeputyService.js');
 
 
-/**
- * @name Custom async property validator example
- * @description
- * Return true for valid BranchOfBusiness, otherwise return false.
- *
- * To create a async custom validator you have to implement IAsyncPropertyValidator interface.
- * Async custom validator must have property isAsync set to true;
- */
-class FakeVacationDeputyService {
 
-    /**
-     * It checks first deputy in the vacation request with list of all approved vacations that they are not in conflict.
-     * @param an {any} vacation request to check
-     * @returns {boolean} return true for valid value, otherwise false
-     */
-    isAcceptable(data:VacationApproval.IVacationApprovalData):Q.Promise<boolean> {
-        var deferred = Q.defer<boolean>();
-
-        setTimeout(function () {
-
-            //check if there is something to validate -> check required data for validation
-            var namesAreValid = data.Deputy1.FirstName != undefined && data.Deputy1.LastName != undefined;
-            var datesAreValid =  _.isDate(data.Duration.From) && _.isDate(data.Duration.To);
-            if (!namesAreValid || !datesAreValid) {
-                //nothing to validate
-                deferred.resolve(true);
-                return;
-            }
-
-            //fetch items form somewhere - eg. db
-            var items =
-                [
-                    { "approvedDays": [moment(), moment().add('days',1).startOf('days')], "fullName": "John Smith" },
-                    { "approvedDays": [moment().add('days',1).startOf('days'),  moment().add('days',2).startOf('days')], "fullName": "Paul Neuman" },
-                ];
-
-            //find out range
-            var durationRange = moment().range(data.Duration.From, data.Duration.To);
-
-            //validation
-            var hasSomeConflicts = _.some(items, function (item) {
-                return (item.fullName == (data.Deputy1.FirstName + " " + data.Deputy1.LastName) &&
-                _.some(item.approvedDays, function(approvedDay){
-                   return durationRange.contains(approvedDay.startOf('days'));
-                }));
-            });
-            deferred.resolve(!hasSomeConflicts);
-        }, 1000);
-
-        return deferred.promise;
+var addWeekdays =  function (date, days) {
+    date = moment(date); // clone
+    while (days > 0) {
+        date = date.add(1, 'days');
+        // decrease "days" only if it's a weekday.
+        if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
+            days -= 1;
+        }
     }
-}
+    return date;
+};
 
+var addWeekends =  function (date, days) {
+    date = moment(date); // clone
+    while (days > 0) {
+        date = date.add(1, 'days');
+        // decrease "days" only if it's a weekday.
+        if (date.isoWeekday() === 6 || date.isoWeekday() === 7) {
+            days -= 1;
+        }
+    }
+    return date;
+};
+var firstWeekday = function(days?:number){
+    if (days == undefined) days = 0;
+    return addWeekdays(new Date(),1).clone().add('days',days).toDate();
+}
+var firstWeekend = function(days?:number){
+    if (days == undefined) days = 0;
+    return addWeekends(new Date(),1).clone().add('days',days).toDate();
+}
 
 describe('business rules for vacation approval', function () {
     //create test data
@@ -181,8 +161,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: moment(new Date()).add({days: -1}).toDate(),
-                    To: moment(new Date()).add({days: -1}).toDate()
+                    From: firstWeekday(-4),
+                    To: firstWeekday(-4)
                 };
 
                 //exec
@@ -197,8 +177,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: moment(new Date()).add({years: 1, days: 1}).toDate(),
-                    To: moment(new Date()).add({years: 1, days: 1}).toDate()
+                    From: firstWeekday(367),
+                    To: firstWeekday(367)
                 };
 
                 //exec
@@ -209,28 +189,13 @@ describe('business rules for vacation approval', function () {
                 expect(businessRules.Errors.Errors["Duration"].Errors["To"].HasErrors).to.equal(true);
             });
 
-            it('fill dates qreater than one year from today', function () {
-                //when
-                //when
-                data.Duration = {
-                    From: moment(new Date()).add({years: 1, days: 1}).toDate(),
-                    To: moment(new Date()).add({years: 1, days: 1}).toDate()
-                };
-
-                //exec
-                businessRules.Validate();
-
-                //verify
-                expect(businessRules.Errors.Errors["Duration"].Errors["From"].HasErrors).to.equal(true);
-                expect(businessRules.Errors.Errors["Duration"].Errors["To"].HasErrors).to.equal(true);
-            });
 
             it('fill today', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: new Date(),
-                    To: new Date()
+                    From: firstWeekday(),
+                    To: firstWeekday()
 
                 };
 
@@ -246,8 +211,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: moment(new Date()).add({years: 1}).toDate(),
-                    To: moment(new Date()).add({years: 1}).toDate()
+                    From: firstWeekday(360),
+                    To: firstWeekday(360)
                 };
 
                 //exec
@@ -258,30 +223,48 @@ describe('business rules for vacation approval', function () {
                 expect(businessRules.Errors.Errors["Duration"].Errors["To"].HasErrors).to.equal(false);
             });
 
-        });
-
-        describe('duration in days', function () {
-            it('zero duration', function () {
+            it('fill weekend', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: new Date(),
-                    To: new Date()
+                    From: firstWeekend(),
+                    To: firstWeekend()
+
                 };
 
                 //exec
                 businessRules.Validate();
 
                 //verify
-                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
+                expect(businessRules.Errors.Errors["Duration"].Errors["From"].HasErrors).to.equal(true);
+                expect(businessRules.Errors.Errors["Duration"].Errors["To"].HasErrors).to.equal(true);
+            });
+        });
+
+        describe('duration in days', function () {
+
+            it('zero duration', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday()
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(false);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(1);
             });
 
             it('negative duration', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: new Date(),
-                    To: moment(new Date()).add({ days: -1 }).toDate()
+                    From: firstWeekday(),
+                    To: firstWeekday(-1)
                 };
 
                 //exec
@@ -289,14 +272,68 @@ describe('business rules for vacation approval', function () {
 
                 //verify
                 expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(0);
+
             });
 
             it('minimal duration', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: new Date(),
-                    To: moment(new Date()).add({ days: 1 }).toDate()
+                    From: firstWeekday(),
+                    To: firstWeekday()
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(false);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(1);
+            });
+
+            it('maximal duration 25 days (25 + 10 weekends)', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday(34)
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(false);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(25);
+            });
+
+            it('too big duration 26 days (26 + 10 weekends)', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday(35)
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(26);
+            });
+        });
+
+        describe('excluded days are in duration range', function(){
+
+            it('is in of duration range', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday(1),
+                    ExcludedDays: [firstWeekday(),firstWeekday(1)]
                 };
 
                 //exec
@@ -306,27 +343,13 @@ describe('business rules for vacation approval', function () {
                 expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(false);
             });
 
-            it('maximal duration 30 days', function () {
+            it('is one out of duration range', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: new Date(),
-                    To: moment(new Date()).add({ days: 30 }).toDate()
-                };
-
-                //exec
-                businessRules.Validate();
-
-                //verify
-                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(false);
-            });
-
-            it('too big duration 31 days', function () {
-                //when
-                //when
-                data.Duration = {
-                    From: new Date(),
-                    To: moment(new Date()).add({ days: 31 }).toDate()
+                    From: firstWeekday(),
+                    To: firstWeekday(1),
+                    ExcludedDays: [firstWeekday(2)]
                 };
 
                 //exec
@@ -335,7 +358,22 @@ describe('business rules for vacation approval', function () {
                 //verify
                 expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
             });
-        });
+            it('is more than one out of duration range', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday(1),
+                    ExcludedDays: [firstWeekday(),firstWeekday(1),firstWeekday(2),firstWeekday(3)]
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
+            });
+        })
     });
 
     describe('deputy', function () {
@@ -446,17 +484,17 @@ describe('business rules for vacation approval', function () {
         it('fill employee with vacation and confict in days', function (done) {
             //when
             data.Deputy1 = {
-                FirstName:'John',
-                LastName:'Smith'
+                FirstName: 'John',
+                LastName: 'Smith'
             };
 
             data.Duration = {
-                From :new Date(),
-                To:moment(new Date()).add({ days: 1 }).toDate()
+                From: new Date(),
+                To: moment(new Date()).add({ days: 1 }).toDate()
             }
 
             //exec
-            var promiseResult = businessRules.DeputyConflictsValidator.ValidateAsync(businessRules.Data);
+            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
 
 
             promiseResult.then(function (response) {
@@ -466,7 +504,7 @@ describe('business rules for vacation approval', function () {
 
                 done();
 
-            }).done(null,done);
+            }).done(null, done);
 
 
         });
@@ -474,17 +512,17 @@ describe('business rules for vacation approval', function () {
         it('fill employee with vacation and confict in days', function (done) {
             //when
             data.Deputy1 = {
-                FirstName:'John',
-                LastName:'Smith'
+                FirstName: 'John',
+                LastName: 'Smith'
             };
 
             data.Duration = {
-                From :moment(new Date()).add({ days: 2 }).toDate(),
-                To:moment(new Date()).add({ days:3 }).toDate()
+                From: moment(new Date()).add({ days: 2 }).toDate(),
+                To: moment(new Date()).add({ days: 3 }).toDate()
             }
 
             //exec
-            var promiseResult = businessRules.DeputyConflictsValidator.ValidateAsync(businessRules.Data);
+            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
 
 
             promiseResult.then(function (response) {
@@ -494,42 +532,152 @@ describe('business rules for vacation approval', function () {
 
                 done();
 
-            }).done(null,done);
+            }).done(null, done);
         });
 
     });
 
     describe('complex test', function () {
 
-            it('fill all fields correctly', function () {
-                //when
-                data = {
-                    Employee: {
-                        FirstName: 'John',
-                        LastName: 'Smith'
-                    },
-                    Deputy1 : {
-                        FirstName: 'Paul',
-                        LastName: 'Neuman',
-                        Email:'pneuman@gmai.com'
-                    },
-                    Duration : {
-                        From : new Date(),
-                        To: moment(new Date()).add('days',1).toDate()
-                    }
-                };
+        it('fill all fields correctly', function (done) {
+            //when
+            data = {
+                Employee: {
+                    FirstName: 'John',
+                    LastName: 'Smith'
+                },
+                Deputy1 : {
+                    FirstName: 'Paul',
+                    LastName: 'Neuzil',
+                    Email:'pneuman@gmai.com'
+                },
+                Duration : {
+                    From : firstWeekday(),
+                    To: firstWeekday(1)
+                }
+            };
 
-                businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
+            businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
 
-                //exec
-                businessRules.Validate();
+            //exec
+            businessRules.Validate();
+            //exec
+            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
+
+
+            promiseResult.then(function (response) {
 
                 //verify
                 console.log(businessRules.Errors.ErrorMessage);
                 expect(businessRules.Errors.HasErrors).to.equal(false);
 
-            });
+                done();
+
+            }).done(null, done);
+
+        });
 
 
     });
 });
+
+describe('duration days', function () {
+
+
+    //create test data
+    var data;
+
+    //business rules for vacation approval
+    var duration;
+
+    beforeEach(function () {
+        //setup
+        data = {};
+        duration = new VacationApproval.Duration({Duration:data});
+    });
+
+    describe('range days', function () {
+        it('the same days - return 1 day', function () {
+            //when
+            data.From = new Date(), data.To = new Date();
+
+            //verify
+            expect(duration.RangeDaysCount).to.equal(1);
+        });
+
+        it('positive range - number of days ', function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 1).toDate();
+
+            //verify
+            expect(duration.RangeDaysCount).to.equal(2);
+        });
+
+        it('negative range - zero day', function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', -1).toDate();
+
+            //verify
+            expect(duration.RangeDaysCount).to.equal(0);
+        });
+    });
+    describe('vacation days - exclude weekends', function () {
+
+        it('positive range - one weekend ', function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 6).toDate();
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(5);
+        });
+
+        it('negative range - zero day', function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', -1).toDate();
+
+            //verify
+            expect(duration.RangeDaysCount).to.equal(0);
+        });
+
+        it('positive range - three weekends ', function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 20).toDate();
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(15);
+        });
+    });
+
+
+    describe('vacation days - specific exclude - e.g. public holiday', function () {
+
+        it('within weekdays ' + moment(firstWeekday()).format("dddd, MMMM Do YYYY") , function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 6).toDate();
+            data.ExcludedDays = [firstWeekday()];
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(4);
+        });
+
+        it('within weekends ' + moment(firstWeekend()).format("dddd, MMMM Do YYYY"), function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 6).toDate();
+            data.ExcludedDays = [firstWeekend()];
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(5);
+        });
+
+        it('overlaps range', function () {
+            //when
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('days', 6).toDate();
+            data.ExcludedDays = [moment(new Date()).add('days', 20).toDate()];
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(5);
+        });
+    });
+});
+

@@ -60,6 +60,7 @@ declare module VacationApproval {
         From: Date;
         To: Date;
         Days?: number;
+        ExcludedDays?: Date[];
     }
     /**
     * Data structure for person.
@@ -75,6 +76,38 @@ declare module VacationApproval {
     */
     interface IVacationDeputyService {
         isAcceptable(data: IVacationApprovalData): Q.Promise<boolean>;
+    }
+}
+declare module VacationApproval {
+    /**
+    *  It validates if passed date is week day, for weekends returns not acceptable.
+    */
+    class IsWeekdayValidator implements Validation.IPropertyValidator {
+        public isAcceptable(s: any): boolean;
+        public tagName: string;
+    }
+}
+declare module VacationApproval {
+    class Duration {
+        public DataProvider: IVacationApprovalData;
+        public Data : IDuration;
+        constructor(DataProvider: IVacationApprovalData);
+        public FromDatePart : Moment;
+        public ToDatePart : Moment;
+        public ExcludedDaysDatePart : Moment[];
+        public FromRange : any;
+        public RangeDaysCount : number;
+        public RangeDays : Moment[];
+        public ExcludedWeekdaysCount : number;
+        public ExcludedWeekdays : Moment[];
+        public ExcludedDaysCount : number;
+        public ExcludedDays : Moment[];
+        /**
+        * Return the number of days of vacation.
+        */
+        public VacationDaysCount : number;
+        public VacationDays : Moment[];
+        public createDurationValidator(): Validation.IAbstractValidator<IDuration>;
     }
 }
 declare module VacationApproval {
@@ -115,13 +148,17 @@ declare module VacationApproval {
         * Return the state of all business rules.
         */
         public Errors: any;
+        public Duration: Duration;
         constructor(Data: IVacationApprovalData, vacationDeputyService: IVacationDeputyService);
         /**
         * Executes all business rules.
         */
         public Validate(): void;
+        /**
+        * Execute deputy conflicts validation.
+        */
+        public DeputyConflictsValidatorValidateAsync(): Q.Promise<Validation.IValidationResult>;
         private createMainValidator();
-        private createDurationValidator();
         private createPersonValidator();
     }
 }

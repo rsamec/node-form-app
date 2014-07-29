@@ -1,28 +1,28 @@
 {
+	"Data": "Vacation",
 	"Employee": "Employee",
 	"Name": "Name",
 	"FirstName": "First name",
 	"LastName": "Last name",
+	"Email": "Email",
 	"Duration": "Duration",
 	"From": "From",
 	"To": "To",
+	"ExcludedDays": "Excluded days (public holiday, etc.)",
 	"Deputy1": "Deputy",
 	"Deputy2": "Next deputy",
-	"DiffNames": "Duplic names",
+	"DeputyConflict": "Deputy conflict",
 	"BeforeDate": {
 		"Format": "MM/DD/YYYY",
 		"Msg": "Date '{From}' must be before '{To}'."
 	},
+	"VacationDuration": "Vacation duration",
+	"isWeekday": "Please select weekdays, weekends are not permitted.",
 	"dateCompareExt": {
 		"Format": "MM/DD/YYYY",
 		"Msg": "Date must be between ('{From}' - '{To}')."
 	},
-	"DAYS_TEXT": "days(s)",
-	"Hello": "Hello",
-	"required": "This field is required.",
-	"Data": "Data",
-	"Email": "Email",
-	"VacationDuration": "Vacation duration",
-	"maxlength": "Please enter no more than {MaxLength} characters.",
-	"NoErrors": "There are no errors."
+	"NoErrors": "There are no errors.",
+	"Errors": "Errors",
+	"DAYS_TEXT": "days(s)"
 }

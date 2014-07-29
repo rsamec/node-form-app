@@ -41,15 +41,17 @@ mocha test
 
 Vacation request - basic business rules
 
-+   name -> first name + last name is required
++   employee
+    +   name -> first name + last name is required
 +   duration
     +   from and to is required
-    +   from and to must be valid dates
+    +   from and to must be valid dates (expect weekends)
     +   from and to must be greater or equal today
     +   from and to must be less or equal 1 year
-    +   from must be at least one day before to
-    +   minimal duration is 1 day
-    +   maximal duration is 30 days
+    +   from must be equal or before to field
+    +   minimal duration (without excluded days) is 1 day
+    +   maximal duration (without excluded days) is 25 days
+    +   excluded days - must be in range given by from and to
 +   deputy
     +   first name + last name of deputy is required
     +   contact (email) is required
@@ -78,7 +80,7 @@ Vacation request - basic business rules
     export interface IDuration {
         From:Date;
         To:Date;
-        Days?:number;
+        ExcludedDays?:number;
     }
 
     /**
@@ -416,8 +418,7 @@ Example of duration business rules test
 Output of all business rules for vacation are under tests.
 
 ```bash
-
- business rules for vacation approval
+  business rules for vacation approval
     employee
       first name + last name
         √ fill no names
@@ -437,8 +438,12 @@ Output of all business rules for vacation are under tests.
         √ zero duration
         √ negative duration
         √ minimal duration
-        √ maximal duration 30 days
-        √ too big duration 31 days
+        √ maximal duration 25 days (25 + 10 weekends) (108ms)
+        √ too big duration 26 days (26 + 10 weekends) (103ms)
+      excluded days are in duration range
+        √ is in of duration range
+        √ is one out of duration range
+        √ is more than one out of duration range
     deputy
       first name + last name
         √ fill no names
@@ -450,8 +455,24 @@ Output of all business rules for vacation are under tests.
         √ fill wrong email
         √ fill some email
     deputy check with list of all approved vacations that they are not in conflict
-      √ fill employee with vacation and confict in days (1006ms)
       √ fill employee with vacation and confict in days (1012ms)
+      √ fill employee with vacation and confict in days (1015ms)
+    complex test
+
+      √ fill all fields correctly (1013ms)
+
+  duration days
+    range days
+      √ the same days - return 1 day
+      √ positive range - number of days
+      √ negative range - zero day
+    vacation days - exclude weekends
+      √ positive range - one weekend
+      √ negative range - zero day
+      √ positive range - three weekends
+    vacation days - specific exclude - e.g. public holiday
+      √ within weekdays Wednesday, July 30th 2014
+
 ```
 ## Basic usage
 

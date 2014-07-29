@@ -28,6 +28,8 @@ module VacationApproval {
 
         private isValid(now:any, then:any, compareOperator:Validation.CompareOperator) {
             var isValid = false;
+
+
             if (this.IgnoreTime) {
                 then = then.startOf('day');
                 now = now.startOf('day');

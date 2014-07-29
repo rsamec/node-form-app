@@ -4,6 +4,7 @@
 
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
+///<reference path='Duration.ts'/>
 
 module VacationApproval {
 
@@ -54,7 +55,11 @@ module VacationApproval {
         public Errors;
 
 
+        public Duration:Duration;
+
         constructor(public Data:IVacationApprovalData, private vacationDeputyService:IVacationDeputyService) {
+
+            this.Duration = new Duration(this.Data);
 
             //assign rule to data context
             this.MainValidator = this.createMainValidator().CreateRule("Data");
@@ -81,6 +86,7 @@ module VacationApproval {
             }.bind(this.Data))
 
 
+
             this.Errors = this.MainValidator.ValidationResult;
         }
 
@@ -92,9 +98,12 @@ module VacationApproval {
             this.DeputyConflictsValidator.ValidateAsync(this.Data);
         }
 
-//        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
-//            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
-//        }
+        /**
+         * Execute deputy conflicts validation.
+         */
+        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
+            return this.DeputyConflictsValidator.ValidateAsync(this.Data);
+        }
 
         private createMainValidator():Validation.IAbstractValidator<IVacationApprovalData> {
 
@@ -107,7 +116,7 @@ module VacationApproval {
             validator.ValidatorFor("Deputy2", personValidator);
 
 
-            var durationValidator = this.createDurationValidator();
+            var durationValidator = this.Duration.createDurationValidator();
             validator.ValidatorFor("Duration", durationValidator);
 
             var selfService = this.vacationDeputyService;
@@ -139,81 +148,7 @@ module VacationApproval {
             return validator;
         }
 
-        private createDurationValidator():Validation.IAbstractValidator<IDuration> {
 
-            //create custom composite validator
-            var validator = new Validation.AbstractValidator<IDuration>();
-
-            //create validators
-            var required = new Validation.RequiredValidator();
-            var greaterThanToday = new FromToDateValidator();
-            greaterThanToday.FromOperator = Validation.CompareOperator.GreaterThanEqual;
-            greaterThanToday.From = new Date();
-            greaterThanToday.ToOperator = Validation.CompareOperator.LessThanEqual;
-            greaterThanToday.To = moment(new Date()).add({year: 1}).toDate();
-            greaterThanToday.IgnoreTime = true;
-
-            //assign validators to properties
-            validator.RuleFor("From", required);
-            validator.RuleFor("To", required);
-
-            validator.RuleFor("From", greaterThanToday);
-            validator.RuleFor("To", greaterThanToday);
-
-            //create custom message for validation
-            var customErrorMessage = function (config, args) {
-                var msg = config["Msg"]
-
-                var format = config["Format"];
-                if (format != undefined) {
-                    _.extend(args, {
-                        FormatedFrom: moment(args.From).format(format),
-                        FormatedTo: moment(args.To).format(format),
-                        FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
-                    });
-                }
-
-                msg = msg.replace('From', 'FormatedFrom');
-                msg = msg.replace('To', 'FormatedTo');
-                msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-                return Validation.StringFce.format(msg, args);
-            };
-
-            //create validator function
-            var isBeforeFce = function (args:any) {
-                args.HasError = false;
-                args.ErrorMessage = "";
-
-                //no dates - > nothing to validate
-                if (!_.isDate(this.From) || !_.isDate(this.To)) return;
-                var to = moment(this.To).clone();
-                if (moment(this.From).startOf('day').isAfter(moment(to).add({days: -1}).startOf('day'))) {
-                    args.HasError = true;
-                    args.ErrorMessage = customErrorMessage({Msg:"Date from '{From}' must be before date to '{To}'.",Format:'MM/DD/YYYY'}, this);
-                    args.TranslateArgs = {TranslateId: 'BeforeDate', MessageArgs: this, CustomMessage: customErrorMessage};
-                    return;
-                }
-
-                var maxDays:number = 30
-                //maximal duration
-                if (moment(this.To).startOf('day').diff(moment(this.From).startOf('day'),'days') > maxDays) {
-                    args.HasError = true;
-                    var messageArgs = {MaxDays:maxDays};
-                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
-                    args.TranslateArgs = {TranslateId: 'MaxDuration', MessageArgs: messageArgs};
-
-                }
-            }
-
-            //wrap validator function to named shared validation
-            var validatorFce = {Name: "VacationDuration", ValidationFce: isBeforeFce};
-
-            //assigned shared validation to properties
-            validator.ValidationFor("From", validatorFce);
-            validator.ValidationFor("To", validatorFce);
-
-            return  validator;
-        }
 
         private createPersonValidator():Validation.IAbstractValidator<IPerson> {
 

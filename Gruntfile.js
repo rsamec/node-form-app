@@ -90,6 +90,23 @@ module.exports = function (grunt) {
                     'dist/vacationApproval/vacationApproval.min.js': ['<%= typescript.base.dest %>']
                 }
             }
+        },
+        copy: {
+            main: {
+                files: [
+                    // includes files within path
+                    {expand: true, src: ['src/models/vacationApproval/locales/*'], dest: 'dist/vacationApproval/i18n', filter: 'isFile',flatten:true}
+
+                    // includes files within path and its sub-directories
+                    //{expand: true, src: ['src/models/vacationApproval/locales/**'], dest: 'dest/'},
+
+                    // makes all src relative to cwd
+                    //{expand: true, cwd: 'path/', src: ['**'], dest: 'dest/'},
+
+                    // flattens results to a single level
+                    //{expand: true, flatten: true, src: ['path/**'], dest: 'dest/', filter: 'isFile'}
+                ]
+            }
         }
     });
 
@@ -100,11 +117,12 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-mocha-cli');
     grunt.loadNpmTasks('grunt-typedoc');
     grunt.loadNpmTasks('grunt-typescript');
+    grunt.loadNpmTasks('grunt-contrib-copy');
 
 
     grunt.registerTask('test', [ 'mochacli', 'watch']);
     grunt.registerTask('ci', ['complexity', 'jshint', 'mochacli']);
     grunt.registerTask('default', ['test']);
-    grunt.registerTask('dist', ['typescript','uglify']);
+    grunt.registerTask('dist', ['typescript','uglify','copy']);
     grunt.registerTask('document', ['typedoc']);
 };
