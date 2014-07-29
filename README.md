@@ -9,6 +9,8 @@ It uses example of vacation approval.
 +   how to display errors for different languages
 +   test all business rules
 
+More complex usages of form validation engine [node-form tutorial](https://github.com/rsamec/form/wiki).
+
 ## Install
 
 To install and run example
