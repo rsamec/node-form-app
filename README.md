@@ -35,7 +35,7 @@ To run tests
 mocha test
 ```
 
-## Business rules for vacation
+## Requirements - business rules for vacation approval
 
 Vacation request - basic business rules
 
@@ -51,7 +51,7 @@ Vacation request - basic business rules
 +   deputy
     +   first name + last name of deputy is required
     +   contact (email) is required
-    +   can not select deputy have approved vacation at the same days (async) - not implemented yet
+    +   can not select deputy have approved vacation at the same days (async)
 +   at least one deputy is required -> second deputy is optional
 
 ## Business rules definition
@@ -90,9 +90,9 @@ Vacation request - basic business rules
     }
 ```
 
++ use person validator for Employee and Deputies and use duration valiator for Duration property
 + define common person validator
 + define specialized duration validator
-+ use person validator for Employee and Deputies and use duration valiator for Duration property
 
 ```typescript
 
@@ -493,7 +493,7 @@ Output
 Please enter no more than 15 characters.
 ```
 
-## Example usage
+## Example usage with localization support and display pretty error messages.
 
 
 ```typescript
@@ -634,7 +634,7 @@ Neexistují žádné chyby.
 
 ```
 
-#### These is an example of function how to format errors output.
+These is an example of function how to format pretty errors output.
 
 ```typescript
 var displayErrors = function(node, indent) {
