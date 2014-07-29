@@ -493,8 +493,9 @@ Output
 Please enter no more than 15 characters.
 ```
 
-## Example usage with localization support and display pretty error messages.
+## Example usage with localization support.
 
+These example displays pretty error messages in english or czech localization.
 
 ```typescript
 ///<reference path='typings/node-form/node-form.d.ts'/>
