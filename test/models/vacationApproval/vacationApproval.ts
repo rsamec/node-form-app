@@ -22,7 +22,7 @@ var addWeekdays =  function (date, days) {
     while (days > 0) {
         date = date.add(1, 'days');
         // decrease "days" only if it's a weekday.
-        if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
+        if (date.isoWeekday() !== 6  && date.isoWeekday() !== 7) {
             days -= 1;
         }
     }
@@ -211,8 +211,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 //when
                 data.Duration = {
-                    From: firstWeekday(360),
-                    To: firstWeekday(360)
+                    From: addWeekdays(firstWeekday(360),1).clone().toDate(),
+                    To:addWeekdays(firstWeekday(360),1).clone().toDate()
                 };
 
                 //exec
@@ -322,6 +322,22 @@ describe('business rules for vacation approval', function () {
                 //verify
                 expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
                 expect(businessRules.Duration.VacationDaysCount).to.equal(26);
+            });
+
+            it('too big duration 26 days (26 + 10 weekends)', function () {
+                //when
+                //when
+                data.Duration = {
+                    From: firstWeekday(),
+                    To: firstWeekday(105)
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Duration"].Errors["VacationDuration"].HasErrors).to.equal(true);
+                expect(businessRules.Duration.VacationDaysCount).to.equal(105);
             });
         });
 
@@ -677,6 +693,27 @@ describe('duration days', function () {
 
             //verify
             expect(duration.VacationDaysCount).to.equal(5);
+        });
+    });
+
+    describe('big date ranges - days without exluding weekends - due to performance', function () {
+
+        it('positive range - 4 years' , function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('years', 4).toDate();
+            //data.ExcludedDays = [firstWeekday()];
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(4 *365 + 1);
+        });
+
+        it('negative range - minus 4 years' , function () {
+            //when
+            data.From = new Date(), data.To = moment(new Date()).add('years', -4).toDate();
+            //data.ExcludedDays = [firstWeekday()];
+
+            //verify
+            expect(duration.VacationDaysCount).to.equal(0);
         });
     });
 });

@@ -115,6 +115,7 @@ var VacationApproval;
     var Duration = (function () {
         function Duration(DataProvider) {
             this.DataProvider = DataProvider;
+            this.MAX_DAYS_DIFF = 35;
             _.mixin({
                 //returns true if source has all the properties(nested) of target.
                 contains: function (obj, target) {
@@ -157,7 +158,6 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
-
         Object.defineProperty(Duration.prototype, "ExcludedDaysDatePart", {
             get: function () {
                 return _.map(this.Data.ExcludedDays, function (item) {
@@ -176,6 +176,21 @@ var VacationApproval;
             configurable: true
         });
 
+        Object.defineProperty(Duration.prototype, "IsOverLimitRange", {
+            get: function () {
+                return this.MaxDiffs > this.MAX_DAYS_DIFF;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "MaxDiffs", {
+            get: function () {
+                return this.ToDatePart.diff(this.FromDatePart, 'days');
+            },
+            enumerable: true,
+            configurable: true
+        });
+
         Object.defineProperty(Duration.prototype, "RangeDaysCount", {
             get: function () {
                 return this.RangeDays.length;
@@ -186,6 +201,11 @@ var VacationApproval;
         Object.defineProperty(Duration.prototype, "RangeDays", {
             get: function () {
                 var days = [];
+
+                //limit maximal range - performance reason
+                if (this.IsOverLimitRange)
+                    return days;
+
                 this.FromRange.by('days', function (day) {
                     days.push(day);
                 });
@@ -204,6 +224,10 @@ var VacationApproval;
         Object.defineProperty(Duration.prototype, "ExcludedWeekdays", {
             get: function () {
                 var weekends = [];
+
+                //limit maximal range - performance reason
+                if (this.IsOverLimitRange)
+                    return weekends;
                 this.FromRange.by('days', function (day) {
                     if (day.isoWeekday() == 6 || day.isoWeekday() == 7)
                         weekends.push(day);
@@ -235,11 +259,14 @@ var VacationApproval;
             * Return the number of days of vacation.
             */
             get: function () {
+                if (this.IsOverLimitRange)
+                    return this.MaxDiffs;
                 return this.VacationDays.length;
             },
             enumerable: true,
             configurable: true
         });
+
         Object.defineProperty(Duration.prototype, "VacationDays", {
             get: function () {
                 return _.difference(this.RangeDays, this.ExcludedDays);
@@ -313,10 +340,10 @@ var VacationApproval;
                 var maxDays = 25;
 
                 //maximal duration
-                if (self.VacationDaysCount > maxDays) {
+                if (self.IsOverLimitRange || self.VacationDaysCount > maxDays) {
                     args.HasError = true;
                     var messageArgs = { MaxDays: maxDays };
-                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
+                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays} days.", messageArgs);
                     args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
                 }
 

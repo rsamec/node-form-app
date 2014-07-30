@@ -35,14 +35,21 @@ module VacationApproval{
 
         public get FromDatePart():Moment {return moment(this.Data.From).startOf('days'); }
         public get ToDatePart():Moment {return moment(this.Data.To).startOf('days'); }
-
         public get ExcludedDaysDatePart():Array<Moment> {return _.map(this.Data.ExcludedDays, function(item) {return moment(item).startOf('days');});}
 
-        public get FromRange():any { return moment().range(this.FromDatePart,this.ToDatePart);}
+        private get FromRange():any { return moment().range(this.FromDatePart,this.ToDatePart);}
+
+        public get IsOverLimitRange():boolean {return this.MaxDiffs > this.MAX_DAYS_DIFF;}
+        private get MaxDiffs():any {return this.ToDatePart.diff(this.FromDatePart,'days');}
+        private MAX_DAYS_DIFF:number = 35
 
         public get RangeDaysCount():number {return this.RangeDays.length;}
         public get RangeDays():Array<Moment> {
             var days = [];
+
+            //limit maximal range - performance reason
+            if (this.IsOverLimitRange) return days;
+
             this.FromRange.by('days',function(day){
                 days.push(day);
             });
@@ -51,6 +58,9 @@ module VacationApproval{
         public get ExcludedWeekdaysCount():number {return this.ExcludedWeekdays.length;}
         public get ExcludedWeekdays():Array<Moment> {
             var weekends = [];
+
+            //limit maximal range - performance reason
+            if (this.IsOverLimitRange) return weekends;
             this.FromRange.by('days',function(day){
                 if (day.isoWeekday() == 6 || day.isoWeekday() == 7)
                     weekends.push(day);
@@ -66,7 +76,11 @@ module VacationApproval{
         /**
          * Return the number of days of vacation.
          */
-        public get VacationDaysCount():number {return this.VacationDays.length;}
+        public get VacationDaysCount():number {
+            if (this.IsOverLimitRange) return this.MaxDiffs;
+            return this.VacationDays.length;
+        }
+
         public get VacationDays():Array<Moment> {
             return _.difference(this.RangeDays,this.ExcludedDays);
         }
@@ -136,10 +150,10 @@ module VacationApproval{
 
                 var maxDays:number = 25
                 //maximal duration
-                if (self.VacationDaysCount > maxDays) {
+                if (self.IsOverLimitRange || self.VacationDaysCount > maxDays) {
                     args.HasError = true;
                     var messageArgs = {MaxDays:maxDays};
-                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays}'.", messageArgs);
+                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays} days.", messageArgs);
                     args.TranslateArgs = {TranslateId: 'MaxDuration', MessageArgs: messageArgs};
 
                 }

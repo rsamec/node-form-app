@@ -17,6 +17,9 @@
 		"Format": "DD.MM.YYYY",
 		"Msg": "Das datum '{From}' must vor dem datum '{To}' sein."
 	},
+    "MaxDuration": "Die maximale Urlaubdauer ist {MaxDays} Tage.",
+    "ExcludedDays":"Folgede tage sind nicht im Rahmen des Urlaub:'{ExcludedDates}'.",
+
 	"isWeekday": "Geben Sie bitte eines Datum anders von Samstag or Sonntag.",
 	"dateCompareExt": {
 		"Format": "DD.MM.YYYY",

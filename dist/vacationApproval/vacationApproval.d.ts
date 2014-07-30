@@ -95,7 +95,10 @@ declare module VacationApproval {
         public FromDatePart : Moment;
         public ToDatePart : Moment;
         public ExcludedDaysDatePart : Moment[];
-        public FromRange : any;
+        private FromRange;
+        public IsOverLimitRange : boolean;
+        private MaxDiffs;
+        private MAX_DAYS_DIFF;
         public RangeDaysCount : number;
         public RangeDays : Moment[];
         public ExcludedWeekdaysCount : number;
