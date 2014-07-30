@@ -12,7 +12,7 @@ var _:UnderscoreStatic = require('underscore');
 import Q = require('q');
 
 var moment = require('moment');
-var VacationApproval = require('../../../dist/vacationApproval/vacationApproval.js');
+var VacationApproval = require('../../../dist/vacationApproval/node-vacationApproval.js');
 var FakeVacationDeputyService = require('./FakeVacationDeputyService.js');
 
 
@@ -348,8 +348,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 data.Duration = {
                     From: firstWeekday(),
-                    To: firstWeekday(1),
-                    ExcludedDays: [firstWeekday(),firstWeekday(1)]
+                    To: firstWeekday(2),
+                    ExcludedDays: [firstWeekday(),firstWeekday(2)]
                 };
 
                 //exec
@@ -613,6 +613,7 @@ describe('duration days', function () {
     });
 
     describe('range days', function () {
+
         it('the same days - return 1 day', function () {
             //when
             data.From = new Date(), data.To = new Date();

@@ -58,21 +58,23 @@ var VacationApproval;
         * @returns {string} error message
         */
         FromToDateValidator.prototype.customMessage = function (config, args) {
+            args = _.clone(args);
             var msg = config["Msg"];
 
             var format = config["Format"];
+            var msgArgs = args;
             if (format != undefined) {
-                _.extend(args, {
+                msgArgs = {
                     FormatedFrom: moment(args.From).format(format),
                     FormatedTo: moment(args.To).format(format),
                     FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
-                });
+                };
             }
 
             msg = msg.replace('From', 'FormatedFrom');
             msg = msg.replace('To', 'FormatedTo');
             msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-            return Validation.StringFce.format(msg, args);
+            return Validation.StringFce.format(msg, msgArgs);
         };
         return FromToDateValidator;
     })();
@@ -214,6 +216,21 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Duration.prototype, "RangeWeekdaysCount", {
+            get: function () {
+                return this.RangeWeekdays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Duration.prototype, "RangeWeekdays", {
+            get: function () {
+                return _.difference(this.RangeDays, this.ExcludedWeekdays);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
         Object.defineProperty(Duration.prototype, "ExcludedWeekdaysCount", {
             get: function () {
                 return this.ExcludedWeekdays.length;
@@ -237,6 +254,7 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
+
         Object.defineProperty(Duration.prototype, "ExcludedDaysCount", {
             get: function () {
                 return this.ExcludedDays.length;
@@ -337,14 +355,16 @@ var VacationApproval;
                     return;
                 }
 
+                var minDays = 1;
                 var maxDays = 25;
 
                 //maximal duration
-                if (self.IsOverLimitRange || self.VacationDaysCount > maxDays) {
+                if (self.IsOverLimitRange || (self.VacationDaysCount > maxDays || self.VacationDaysCount < minDays)) {
                     args.HasError = true;
-                    var messageArgs = { MaxDays: maxDays };
-                    args.ErrorMessage = Validation.StringFce.format("Maximal vacation duration is {MaxDays} days.", messageArgs);
-                    args.TranslateArgs = { TranslateId: 'MaxDuration', MessageArgs: messageArgs };
+                    var messageArgs = { MaxDays: maxDays, MinDays: minDays };
+                    args.ErrorMessage = Validation.StringFce.format("Vacation duration value must be between {MinDays] and {MaxDays} days.", messageArgs);
+                    args.TranslateArgs = { TranslateId: 'RangeDuration', MessageArgs: messageArgs };
+                    return;
                 }
 
                 var diff = _.difference(self.ExcludedDaysDatePart, self.RangeDays);
@@ -354,7 +374,8 @@ var VacationApproval;
                             return memo + item.format("MM/DD/YYYY");
                         }) };
                     args.ErrorMessage = Validation.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
-                    args.TranslateArgs = { TranslateId: 'ExcludedDays', MessageArgs: messageArgs2 };
+                    args.TranslateArgs = { TranslateId: 'ExcludedDaysMsg', MessageArgs: messageArgs2 };
+                    return;
                 }
             };
 
@@ -493,8 +514,8 @@ var VacationApproval;
     })();
     VacationApproval.BusinessRules = BusinessRules;
 })(VacationApproval || (VacationApproval = {}));
-var moment = require('moment-range');
-var _ = require('underscore');
-var Q = require('q');
-var Validation = require('node-form');
-module.exports = VacationApproval;
+//var moment = require('moment-range');
+//var _ = require('underscore');
+//var Q = require('q');
+//var Validation = require('node-form');
+//module.exports = VacationApproval;

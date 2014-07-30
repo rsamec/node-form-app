@@ -18,8 +18,8 @@
         "Format": "DD.MM.YYYY",
         "Msg": "Datum '{From}' musí být před datem '{To}'."
     },
-    "MaxDuration": "Maximální počet dní dovolené je {MaxDays} dní.",
-    "ExcludedDays":"Následující dny nejsou v rozsahu dovolené: '{ExcludedDates}'.",
+    "RangeDuration": "Doba dovolené musí být mezi {MinDays} a {MaxDays} dny.",
+    "ExcludedDaysMsg":"Následující dny nejsou v rozsahu dovolené: '{ExcludedDates}'.",
 
 	"isWeekday": "Datum nesmí být sobota nebo neděle.",
     "dateCompareExt": {

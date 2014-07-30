@@ -101,6 +101,8 @@ declare module VacationApproval {
         private MAX_DAYS_DIFF;
         public RangeDaysCount : number;
         public RangeDays : Moment[];
+        public RangeWeekdaysCount : number;
+        public RangeWeekdays : Moment[];
         public ExcludedWeekdaysCount : number;
         public ExcludedWeekdays : Moment[];
         public ExcludedDaysCount : number;

@@ -16,8 +16,8 @@
 		"Format": "MM/DD/YYYY",
 		"Msg": "Date '{From}' must be before '{To}'."
 	},
-    "MaxDuration": "Maximal vacation duration is {MaxDays} days.",
-    "ExcludedDays":"These excluded days are not in range: '{ExcludedDates}'.",
+    "RangeDuration": "Vacation duration value must be between {MinDays} and {MaxDays} days.",
+    "ExcludedDaysMsg":"These excluded days are not in range: '{ExcludedDates}'.",
 
 	"VacationDuration": "Vacation duration",
 	"isWeekday": "Please select weekdays, weekends are not permitted.",

@@ -87,7 +87,9 @@ module.exports = function (grunt) {
             },
             dist: {
                 files: {
-                    'dist/vacationApproval/vacationApproval.min.js': ['<%= typescript.base.dest %>']
+                    'dist/vacationApproval/vacationApproval.min.js': ['<%= typescript.base.dest %>'],
+                    'dist/vacationApproval/node-vacationApproval.min.js': ['dist/vacationApproval/node-vacationApproval.js']
+
                 }
             }
         },
@@ -107,7 +109,16 @@ module.exports = function (grunt) {
                     //{expand: true, flatten: true, src: ['path/**'], dest: 'dest/', filter: 'isFile'}
                 ]
             }
-        }
+        },
+        concat: {
+            dist: {
+                files: {
+                    //'dist/basic.js': ['src/main.js'],
+                    'dist/vacationApproval/node-vacationApproval.js': ['<%= typescript.base.dest %>', 'src/models/vacationApproval/commonjs.js']
+
+                }
+            }
+         }
     });
 
     grunt.loadNpmTasks('grunt-complexity');
@@ -118,11 +129,12 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-typedoc');
     grunt.loadNpmTasks('grunt-typescript');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-concat');
 
 
     grunt.registerTask('test', [ 'mochacli', 'watch']);
     grunt.registerTask('ci', ['complexity', 'jshint', 'mochacli']);
     grunt.registerTask('default', ['test']);
-    grunt.registerTask('dist', ['typescript','uglify','copy']);
+    grunt.registerTask('dist', ['typescript','concat:dist','uglify','copy']);
     grunt.registerTask('document', ['typedoc']);
 };

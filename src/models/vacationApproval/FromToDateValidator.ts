@@ -62,21 +62,23 @@ module VacationApproval {
          * @returns {string} error message
          */
         public customMessage(config, args):string {
+            args = _.clone(args);
             var msg = config["Msg"]
 
             var format = config["Format"];
+            var msgArgs  =  args;
             if (format != undefined) {
-                _.extend(args, {
+                msgArgs = {
                     FormatedFrom: moment(args.From).format(format),
                     FormatedTo: moment(args.To).format(format),
                     FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
-                });
+                };
             }
 
             msg = msg.replace('From', 'FormatedFrom');
             msg = msg.replace('To', 'FormatedTo');
             msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-            return Validation.StringFce.format(msg, args);
+            return Validation.StringFce.format(msg, msgArgs);
         }
 
         tagName = "dateCompareExt";
