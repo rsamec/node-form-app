@@ -26,6 +26,7 @@
     "grunt-typescript": "^0.3.8",
     "tsd": "^0.5.7"
   },
+
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
