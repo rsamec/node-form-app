@@ -26,20 +26,7 @@ _.extend(local.locales['en'],en.ValidationMessages);
 _.extend(local.locales['cz'],cz.ValidationMessages);
 _.extend(local.locales['de'],de.ValidationMessages);
 
-
-//set default culture
-local.setLocale('en');
-
-//create test data
-var data:VacationApproval.IVacationApprovalData = {};
-
-//business rules for vacation approval
-var businessRules = new VacationApproval.BusinessRules(data,new FakeVacationDeputyService());
-
-//execute validation
-businessRules.Validate();
-
-
+//friendly-displayed errors
 var displayErrors = function(node, indent) {
 
     if (indent == 0){
@@ -92,37 +79,50 @@ var displayErrors = function(node, indent) {
     }
 }
 
+//set default culture
+local.setLocale('en');
 
-//verify results
-if (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,0)
+//create test data
+var data:VacationApproval.IVacationApprovalData = {};
+
+//business rules for vacation approval
+var businessRules = new VacationApproval.BusinessRules(data,new FakeVacationDeputyService());
 
 //fill some fields
-data.Employee.FirstName = "John";
-data.Employee.LastName = "Smith toooooooooooooooooooooooooo long";
-
-data.Duration.From = moment(new Date()).add({days:-1}).toDate();
-data.Duration.To = moment(new Date()).add({days:-10}).toDate();
-
-//execute validation
-businessRules.Validate();
-
-//verify results
-if (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,0);
-
-
-//fill all fields
-data.Employee.LastName = "Smith";
-
-
-data.Deputy1.FirstName = "John";
-data.Deputy1.LastName = "Smith";
-data.Deputy1.Email = "jsmith@gmail.com";
-
-data.Duration.From = moment(new Date()).add({days:1}).toDate();
-data.Duration.To = moment(new Date()).add({days:3}).toDate();
+data.Employee = {
+    FirstName: "John",
+    LastName: "Smith toooooooooooooooooooooooooo long"
+};
+data.Duration = {
+    From :moment(new Date()).add({days:-1}).toDate(),
+    To : moment(new Date()).add({days:-10}).toDate()
+};
 
 //execute validation
-businessRules.Validate();
+var promise = businessRules.Validate();
 
-//verify results
-displayErrors(businessRules.Errors,0);
+promise.then(function(result){
+    //verify results
+    displayErrors(businessRules.Errors,0);
+},function(reason){console.log(reason)}).then(function() {
+
+    //fill additional fields
+    data.Employee.LastName = "Smith";
+
+    data.Deputy1.FirstName = "John";
+    data.Deputy1.LastName = "Smith";
+    data.Deputy1.Email = "jsmith@gmail.com";
+
+    data.Duration.From = moment(new Date()).add({days: 1}).toDate();
+    data.Duration.To = moment(new Date()).add({days: 3}).toDate();
+
+//execute validation
+    var promise = businessRules.Validate();
+
+    promise.then(function (result) {
+        //verify results
+        displayErrors(businessRules.Errors, 0);
+    }, function (reason) {
+        console.log(reason)
+    })
+});

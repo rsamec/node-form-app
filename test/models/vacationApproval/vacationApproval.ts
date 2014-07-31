@@ -348,8 +348,8 @@ describe('business rules for vacation approval', function () {
                 //when
                 data.Duration = {
                     From: firstWeekday(),
-                    To: firstWeekday(2),
-                    ExcludedDays: [firstWeekday(),firstWeekday(2)]
+                    To: firstWeekday(5),
+                    ExcludedDays: [firstWeekday()]
                 };
 
                 //exec
@@ -510,7 +510,7 @@ describe('business rules for vacation approval', function () {
             }
 
             //exec
-            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
+            var promiseResult = businessRules.Validate();
 
 
             promiseResult.then(function (response) {
@@ -538,7 +538,7 @@ describe('business rules for vacation approval', function () {
             }
 
             //exec
-            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
+            var promiseResult = businessRules.Validate();
 
 
             promiseResult.then(function (response) {
@@ -569,17 +569,14 @@ describe('business rules for vacation approval', function () {
                 },
                 Duration : {
                     From : firstWeekday(),
-                    To: firstWeekday(1)
+                    To: firstWeekday()
                 }
             };
 
             businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
 
             //exec
-            businessRules.Validate();
-            //exec
-            var promiseResult = businessRules.DeputyConflictsValidatorValidateAsync();
-
+            var promiseResult = businessRules.Validate();
 
             promiseResult.then(function (response) {
 

@@ -1,6 +1,7 @@
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+"use strict";
 var VacationApproval;
 (function (VacationApproval) {
     /**
@@ -81,9 +82,11 @@ var VacationApproval;
     VacationApproval.FromToDateValidator = FromToDateValidator;
 })(VacationApproval || (VacationApproval = {}));
 ///<reference path='../../../typings/q/q.d.ts'/>
+"use strict";
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+"use strict";
 var VacationApproval;
 (function (VacationApproval) {
     /**
@@ -112,6 +115,7 @@ var VacationApproval;
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='IsWeekdayValidator.ts'/>
 ///<reference path='Data.ts'/>
+"use strict";
 var VacationApproval;
 (function (VacationApproval) {
     var Duration = (function () {
@@ -172,7 +176,7 @@ var VacationApproval;
 
         Object.defineProperty(Duration.prototype, "FromRange", {
             get: function () {
-                return moment().range(this.FromDatePart, this.ToDatePart);
+                return moment()["range"](this.FromDatePart, this.ToDatePart);
             },
             enumerable: true,
             configurable: true
@@ -398,6 +402,7 @@ var VacationApproval;
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 ///<reference path='Duration.ts'/>
+"use strict";
 var VacationApproval;
 (function (VacationApproval) {
     /**
@@ -440,13 +445,6 @@ var VacationApproval;
         */
         BusinessRules.prototype.Validate = function () {
             this.MainValidator.ValidateAll(this.Data);
-            this.DeputyConflictsValidator.ValidateAsync(this.Data);
-        };
-
-        /**
-        * Execute deputy conflicts validation.
-        */
-        BusinessRules.prototype.DeputyConflictsValidatorValidateAsync = function () {
             return this.DeputyConflictsValidator.ValidateAsync(this.Data);
         };
 

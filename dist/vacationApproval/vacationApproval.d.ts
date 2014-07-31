@@ -158,11 +158,7 @@ declare module VacationApproval {
         /**
         * Executes all business rules.
         */
-        public Validate(): void;
-        /**
-        * Execute deputy conflicts validation.
-        */
-        public DeputyConflictsValidatorValidateAsync(): Q.Promise<Validation.IValidationResult>;
+        public Validate(): Q.Promise<Validation.IValidationResult>;
         private createMainValidator();
         private createPersonValidator();
     }

@@ -11,7 +11,7 @@
 var _ = require('underscore');
 import Q = require('q');
 
-var moment = require('moment');
+var moment = require('moment-range');
 
 /**
  * @name Custom async property validator example

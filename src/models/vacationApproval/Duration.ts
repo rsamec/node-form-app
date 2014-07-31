@@ -5,7 +5,7 @@
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='IsWeekdayValidator.ts'/>
 ///<reference path='Data.ts'/>
-
+"use strict";
 module VacationApproval{
     export class Duration{
 
@@ -37,7 +37,7 @@ module VacationApproval{
         public get ToDatePart():Moment {return moment(this.Data.To).startOf('days'); }
         public get ExcludedDaysDatePart():Array<Moment> {return _.map(this.Data.ExcludedDays, function(item) {return moment(item).startOf('days');});}
 
-        private get FromRange():any { return moment().range(this.FromDatePart,this.ToDatePart);}
+        private get FromRange():any { return moment()["range"](this.FromDatePart,this.ToDatePart);}
 
         public get IsOverLimitRange():boolean {return this.MaxDiffs > this.MAX_DAYS_DIFF;}
         private get MaxDiffs():any {return this.ToDatePart.diff(this.FromDatePart,'days');}

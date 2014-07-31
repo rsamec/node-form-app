@@ -1,5 +1,5 @@
 ///<reference path='../../../typings/q/q.d.ts'/>
-
+"use strict";
 module VacationApproval {
 
     /**
@@ -39,4 +39,5 @@ module VacationApproval {
     export interface IVacationDeputyService {
         isAcceptable(data:VacationApproval.IVacationApprovalData):Q.Promise<boolean>
     }
+
 }

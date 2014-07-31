@@ -9,6 +9,7 @@ module.exports = function (grunt) {
             generic: {
                 src: ['src/**/*.js'],
                 options: {
+                    breakOnErrors:false,
                     errorsOnly: false,
                     cyclometric: 6,       // default is 3
                     halstead: 16,         // default is 8
@@ -19,11 +20,12 @@ module.exports = function (grunt) {
         jshint: {
             all: [
                 'Gruntfile.js',
-                'src/**/*.js',
-                'test/**/*.js'
+                'src/**/*.js'
+                //'test/**/*.js'
             ],
             options: {
-                jshintrc: '.jshintrc'
+                jshintrc: '.jshintrc',
+                force:false
             }
         },
         mochacli: {
@@ -64,22 +66,18 @@ module.exports = function (grunt) {
                     declaration: true,
                     comments:true
                 }
+            },
+            test:{
+                src: ['test/models/vacationApproval/*.ts'],
+                dest: '',
+                options: {
+                    module: 'commonjs',
+                    target: 'es5',
+                    declaration: false,
+                    comments:true
+                }
             }
         },
-//      typescript: {
-//          base: {
-//              src: ['src/customValidators/*.ts','src/localization/*.ts'],
-//              dest: 'distNode/lib',
-//              options: {
-//                  module: 'commonjs',
-//                  target: 'es5',
-//                  declaration: false,
-//                  after:['uglify'],
-//                  comments:false,
-//                  basePath:'src'
-//              }
-//          }
-//      },
         uglify: {
             options: {
                 // the banner is inserted at the top of the output
@@ -132,9 +130,9 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-concat');
 
 
-    grunt.registerTask('test', [ 'mochacli', 'watch']);
+    grunt.registerTask('test', ['typescript:test', 'mochacli', 'watch']);
     grunt.registerTask('ci', ['complexity', 'jshint', 'mochacli']);
     grunt.registerTask('default', ['test']);
-    grunt.registerTask('dist', ['typescript','concat:dist','uglify','copy']);
+    grunt.registerTask('dist', ['typescript:base','concat:dist','uglify','copy']);
     grunt.registerTask('document', ['typedoc']);
 };

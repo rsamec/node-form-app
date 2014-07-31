@@ -1,3 +1,4 @@
+
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
@@ -5,7 +6,7 @@
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 ///<reference path='Duration.ts'/>
-
+"use strict";
 module VacationApproval {
 
     /**
@@ -93,15 +94,8 @@ module VacationApproval {
         /**
          * Executes all business rules.
          */
-        public Validate():void {
+        public Validate():Q.Promise<Validation.IValidationResult> {
             this.MainValidator.ValidateAll(this.Data);
-            this.DeputyConflictsValidator.ValidateAsync(this.Data);
-        }
-
-        /**
-         * Execute deputy conflicts validation.
-         */
-        public DeputyConflictsValidatorValidateAsync():Q.Promise<Validation.IValidationResult>{
             return this.DeputyConflictsValidator.ValidateAsync(this.Data);
         }
 
