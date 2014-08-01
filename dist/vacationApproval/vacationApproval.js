@@ -428,7 +428,7 @@ var VacationApproval;
 
             //enable optional on the upper level
             this.EmployeeValidator.Rules["Email"].Optional = function () {
-                return this.Email == undefined || !this.Email.Checked;
+                return true;
             }.bind(this.Data.Employee);
 
             //            this.Deputy1Validator.SetOptional(function () {
