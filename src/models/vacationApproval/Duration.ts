@@ -99,9 +99,8 @@ module VacationApproval{
 
             //create validators
             var required = new Validation.RequiredValidator();
-            var greaterThanToday = new FromToDateValidator();
             var weekDay = new IsWeekdayValidator();
-
+            var greaterThanToday = new FromToDateValidator();
             greaterThanToday.FromOperator = Validation.CompareOperator.GreaterThanEqual;
             greaterThanToday.From = new Date();
             greaterThanToday.ToOperator = Validation.CompareOperator.LessThanEqual;

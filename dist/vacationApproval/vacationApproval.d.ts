@@ -2,6 +2,7 @@
 /// <reference path="../../typings/underscore/underscore.d.ts" />
 /// <reference path="../../typings/node-form/node-form.d.ts" />
 /// <reference path="../../typings/q/Q.d.ts" />
+/// <reference path="../../typings/node-form/validators.d.ts" />
 declare module VacationApproval {
     /**
     *  It validates passed date against constant from and to interval.
@@ -52,6 +53,7 @@ declare module VacationApproval {
         Deputy2?: IPerson;
         Duration?: IDuration;
         Comment?: string;
+        Approval?: IApproval;
     }
     /**
     * Data structure for vacation duration.
@@ -70,6 +72,14 @@ declare module VacationApproval {
         FirstName: string;
         LastName: string;
         Email?: string;
+    }
+    /**
+    * Data structure for approval data.
+    */
+    interface IApproval {
+        Approved: boolean;
+        ApprovedDate: Date;
+        ApprovedBy: IPerson;
     }
     /**
     * External service that return true if there is conflict with deputies approved days.
@@ -142,24 +152,42 @@ declare module VacationApproval {
         */
         public DurationValidator: any;
         /**
+        * Business rules for manager that is responsible for approval of vacation request.
+        */
+        public ApprovedByValidator: any;
+        /**
         *  Deputy conflict - employee that have approved vacation and its someones's deputy at the same days.
         */
         public DeputyConflictsValidator: any;
         /**
+        * All business rules for the vacation request.
+        */
+        public VacationRequestValidator: any;
+        /**
         * All business rules for the vacation approval.
         */
-        public MainValidator: any;
+        public VacationApprovalValidator: any;
         /**
-        * Return the state of all business rules.
+        * Return vacation request erros.
         */
         public Errors: any;
+        /**
+        * Return vacation approval errors.
+        */
+        public VacationApprovalErrors: any;
         public Duration: Duration;
         constructor(Data: IVacationApprovalData, vacationDeputyService: IVacationDeputyService);
         /**
-        * Executes all business rules.
+        * Executes all business rules for validation request.
         */
         public Validate(): Q.Promise<Validation.IValidationResult>;
-        private createMainValidator();
+        /**
+        * Executes all business rules for validation approval.
+        */
+        public ValidateApproval(): Q.Promise<Validation.IValidationResult>;
+        private createApprovalValidator();
+        private createApprovedByValidator();
+        private createVacationRequestValidator();
         private createPersonValidator();
     }
 }

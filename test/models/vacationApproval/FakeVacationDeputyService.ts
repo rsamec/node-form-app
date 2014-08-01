@@ -34,7 +34,7 @@ class FakeVacationDeputyService {
         setTimeout(function () {
 
             //check if there is something to validate -> check required data for validation
-            var namesAreValid = data.Deputy1.FirstName != undefined && data.Deputy1.LastName != undefined;
+            var namesAreValid = data.Deputy1 !== undefined && data.Deputy1.FirstName !== undefined && data.Deputy1.LastName !== undefined;
             var datesAreValid = _.isDate(data.Duration.From) && _.isDate(data.Duration.To);
             if (!namesAreValid || !datesAreValid) {
                 //nothing to validate

@@ -570,6 +570,13 @@ describe('business rules for vacation approval', function () {
                 Duration : {
                     From : firstWeekday(),
                     To: firstWeekday()
+                },
+                Approval:{
+                    ApprovedBy:{
+                        FirstName: 'John',
+                        LastName: 'Conrad',
+                        Email: 'ppp@gmail.com'
+                    }
                 }
             };
 
@@ -589,8 +596,135 @@ describe('business rules for vacation approval', function () {
             }).done(null, done);
 
         });
+    });
+
+    describe('approved by', function () {
+
+        describe('first name + last name', function () {
+
+            it('fill no names', function () {
+                //when
+                data.Approval = {
+                    ApprovedBy: {
+
+                    }
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["FirstName"].HasErrors).to.equal(true);
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["LastName"].HasErrors).to.equal(true);
+            });
+
+            it('fill empty names', function () {
+                //when
+                data.Approval = {
+                    ApprovedBy: {
+                        FirstName: '',
+                        LastName: ''
+                    }
+                };
+
+                //exec
+                businessRules.Validate();
 
 
+                //verify
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["FirstName"].HasErrors).to.equal(true);
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["LastName"].HasErrors).to.equal(true);
+                ;
+            });
+
+            it('fill long names', function () {
+                //when
+                data.Approval = {
+                    ApprovedBy: {
+                        FirstName: 'too looooooooooooong first name',
+                        LastName: 'too looooooooooooong last name'
+                    }
+                };
+
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["FirstName"].HasErrors).to.equal(true);
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["LastName"].HasErrors).to.equal(true);
+            });
+
+            it('fill some names', function () {
+                //when
+                data.Approval = {
+                    ApprovedBy: {
+                        FirstName: 'John',
+                        LastName: 'Smith'
+                    }
+                };
+
+                //exec
+                businessRules.Validate();
+
+                //verify
+                //verify
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["FirstName"].HasErrors).to.equal(false);
+                expect(businessRules.Errors.Errors["Approval"].Errors["ApprovedBy"].Errors["LastName"].HasErrors).to.equal(false);
+            });
+        });
+
+
+        describe('approved date', function () {
+
+            it('approved before vacation starts - no error', function () {
+                //when
+                data.Duration = {
+                    From: firstWeekday(14)
+                }
+                data.Approval = {
+                    ApprovedDate: firstWeekday(7)
+                };
+
+                //exec
+                businessRules.ValidateApproval();
+
+                //verify
+                expect(businessRules.VacationApprovalErrors["ApprovedByLessThanEqualFrom"].HasErrors).to.equal(false);
+            });
+
+            it('approved after vacation starts - error', function () {
+                //when
+                data.Duration = {
+                    From: firstWeekday(0)
+                }
+                data.Approval = {
+                    ApprovedDate: firstWeekday(7)
+                };
+
+                //exec
+                businessRules.ValidateApproval();
+
+                //verify
+                expect(businessRules.VacationApprovalErrors["ApprovedByLessThanEqualFrom"].HasErrors).to.equal(true);
+            });
+
+            it('approved the same days as vacation starts - no error', function () {
+                //when
+                data.Duration = {
+                    From: firstWeekday()
+                }
+                data.Approval = {
+                    ApprovedDate: firstWeekday()
+                };
+
+                //exec
+                businessRules.ValidateApproval();
+
+                //verify
+                expect(businessRules.VacationApprovalErrors["ApprovedByLessThanEqualFrom"].HasErrors).to.equal(false);
+            });
+        });
     });
 });
 
@@ -606,7 +740,7 @@ describe('duration days', function () {
     beforeEach(function () {
         //setup
         data = {};
-        duration = new VacationApproval.Duration({Duration:data});
+        duration = new VacationApproval.Duration({Duration: data});
     });
 
     describe('range days', function () {
@@ -665,7 +799,7 @@ describe('duration days', function () {
 
     describe('vacation days - specific exclude - e.g. public holiday', function () {
 
-        it('within weekdays ' + moment(firstWeekday()).format("dddd, MMMM Do YYYY") , function () {
+        it('within weekdays ' + moment(firstWeekday()).format("dddd, MMMM Do YYYY"), function () {
             //when
             data.From = new Date(), data.To = moment(new Date()).add('days', 6).toDate();
             data.ExcludedDays = [firstWeekday()];
@@ -696,16 +830,16 @@ describe('duration days', function () {
 
     describe('big date ranges - days without exluding weekends - due to performance', function () {
 
-        it('positive range - 4 years' , function () {
+        it('positive range - 4 years', function () {
             //when
             data.From = new Date(), data.To = moment(new Date()).add('years', 4).toDate();
             //data.ExcludedDays = [firstWeekday()];
 
             //verify
-            expect(duration.VacationDaysCount).to.equal(4 *365 + 1);
+            expect(duration.VacationDaysCount).to.equal(4 * 365 + 1);
         });
 
-        it('negative range - minus 4 years' , function () {
+        it('negative range - minus 4 years', function () {
             //when
             data.From = new Date(), data.To = moment(new Date()).add('years', -4).toDate();
             //data.ExcludedDays = [firstWeekday()];
@@ -714,5 +848,5 @@ describe('duration days', function () {
             expect(duration.VacationDaysCount).to.equal(0);
         });
     });
-});
 
+});

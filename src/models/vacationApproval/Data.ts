@@ -11,6 +11,7 @@ module VacationApproval {
         Deputy2?:IPerson;
         Duration?:IDuration;
         Comment?:string;
+        Approval?:IApproval;
     }
 
     /**
@@ -32,6 +33,16 @@ module VacationApproval {
         LastName:string;
         Email?:string;
     }
+
+    /**
+     * Data structure for approval data.
+     */
+    export interface IApproval{
+        Approved:boolean;
+        ApprovedDate:Date;
+        ApprovedBy:IPerson;
+    }
+
 
     /**
      * External service that return true if there is conflict with deputies approved days.
