@@ -425,7 +425,7 @@ var VacationApproval;
             this.Deputy1Validator = this.VacationRequestValidator.Children["Deputy1"];
             this.Deputy2Validator = this.VacationRequestValidator.Children["Deputy2"];
             this.DurationValidator = this.VacationRequestValidator.Children["Duration"];
-            this.ApprovedByValidator = this.VacationRequestValidator.Children["Approval"];
+            this.ApprovedByValidator = this.VacationRequestValidator.Children["Approval"].Children["ApprovedBy"];
 
             this.DeputyConflictsValidator = this.VacationRequestValidator.Validators["DeputyConflict"];
 
