@@ -80,7 +80,7 @@ var displayErrors = function(node, indent) {
 }
 
 //set default culture
-local.setLocale('en');
+local.setLocale('cz');
 
 //create test data
 var data:VacationApproval.IVacationApprovalData = {};
