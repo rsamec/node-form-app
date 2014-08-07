@@ -18,7 +18,13 @@ To install and run example
 ```bash
 git clone https://github.com/rsamec/node-form-app
 npm install
-node index.js
+node index
+```
+
+To run tests
+```bash
+tsd reinstall
+grunt test
 ```
 
 All source code is written in typescript.
@@ -29,12 +35,6 @@ REM to compile example usage
 tsc index.ts --t ES5
 REM to compile business rules
 tsc models/vacationApproval/BusinessRules.ts --t ES5 --out vacationApproval.js
-```
-
-To run tests
-
-```bash
-mocha test
 ```
 
 ## Requirements - business rules for vacation approval
