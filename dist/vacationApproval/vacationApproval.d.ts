@@ -2,7 +2,6 @@
 /// <reference path="../../typings/underscore/underscore.d.ts" />
 /// <reference path="../../typings/node-form/node-form.d.ts" />
 /// <reference path="../../typings/q/Q.d.ts" />
-/// <reference path="../../typings/node-form/validators.d.ts" />
 declare module VacationApproval {
     /**
     *  It validates passed date against constant from and to interval.
