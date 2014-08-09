@@ -164,19 +164,16 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Duration.prototype, "ExcludedDaysDatePart", {
+        Object.defineProperty(Duration.prototype, "FromRange", {
             get: function () {
-                return _.map(this.Data.ExcludedDays, function (item) {
-                    return moment(item).startOf('days');
-                });
+                return moment()["range"](this.FromDatePart, this.ToDatePart);
             },
             enumerable: true,
             configurable: true
         });
-
-        Object.defineProperty(Duration.prototype, "FromRange", {
+        Object.defineProperty(Duration.prototype, "MaxDiffs", {
             get: function () {
-                return moment()["range"](this.FromDatePart, this.ToDatePart);
+                return this.ToDatePart.diff(this.FromDatePart, 'days');
             },
             enumerable: true,
             configurable: true
@@ -189,9 +186,12 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Duration.prototype, "MaxDiffs", {
+
+        Object.defineProperty(Duration.prototype, "ExcludedDaysDatePart", {
             get: function () {
-                return this.ToDatePart.diff(this.FromDatePart, 'days');
+                return _.map(this.Data.ExcludedDays, function (item) {
+                    return moment(item).startOf('days');
+                });
             },
             enumerable: true,
             configurable: true
@@ -220,21 +220,6 @@ var VacationApproval;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Duration.prototype, "RangeWeekdaysCount", {
-            get: function () {
-                return this.RangeWeekdays.length;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Duration.prototype, "RangeWeekdays", {
-            get: function () {
-                return _.difference(this.RangeDays, this.ExcludedWeekdays);
-            },
-            enumerable: true,
-            configurable: true
-        });
-
         Object.defineProperty(Duration.prototype, "ExcludedWeekdaysCount", {
             get: function () {
                 return this.ExcludedWeekdays.length;
@@ -259,14 +244,43 @@ var VacationApproval;
             configurable: true
         });
 
+        Object.defineProperty(Duration.prototype, "RangeWeekdaysCount", {
+            /**
+            * Return the number of days of vacation.
+            */
+            get: function () {
+                return this.RangeWeekdays.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(Duration.prototype, "RangeWeekdays", {
+            /**
+            * Return days of vacation.
+            */
+            get: function () {
+                return _.difference(this.RangeDays, this.ExcludedWeekdays);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
         Object.defineProperty(Duration.prototype, "ExcludedDaysCount", {
+            /**
+            * Return the number of days excluded out of vacation.
+            */
             get: function () {
                 return this.ExcludedDays.length;
             },
             enumerable: true,
             configurable: true
         });
+
         Object.defineProperty(Duration.prototype, "ExcludedDays", {
+            /**
+            * Return days excluded out of vacation.
+            */
             get: function () {
                 if (this.Data.ExcludedDays == undefined || this.Data.ExcludedDays.length == 0)
                     return this.ExcludedWeekdays;
@@ -278,7 +292,7 @@ var VacationApproval;
 
         Object.defineProperty(Duration.prototype, "VacationDaysCount", {
             /**
-            * Return the number of days of vacation.
+            * Return the number of days of vacation without explicitly excluded days.
             */
             get: function () {
                 if (this.IsOverLimitRange)
@@ -290,6 +304,9 @@ var VacationApproval;
         });
 
         Object.defineProperty(Duration.prototype, "VacationDays", {
+            /**
+            * Return days of vacation without explicitly excluded days.
+            */
             get: function () {
                 return _.difference(this.RangeDays, this.ExcludedDays);
             },

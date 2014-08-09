@@ -33,18 +33,18 @@ module VacationApproval{
             });
         }
 
-        public get FromDatePart():Moment {return moment(this.Data.From).startOf('days'); }
-        public get ToDatePart():Moment {return moment(this.Data.To).startOf('days'); }
-        public get ExcludedDaysDatePart():Array<Moment> {return _.map(this.Data.ExcludedDays, function(item) {return moment(item).startOf('days');});}
-
+        private get FromDatePart():Moment {return moment(this.Data.From).startOf('days'); }
+        private get ToDatePart():Moment {return moment(this.Data.To).startOf('days'); }
         private get FromRange():any { return moment()["range"](this.FromDatePart,this.ToDatePart);}
-
-        public get IsOverLimitRange():boolean {return this.MaxDiffs > this.MAX_DAYS_DIFF;}
         private get MaxDiffs():any {return this.ToDatePart.diff(this.FromDatePart,'days');}
         private MAX_DAYS_DIFF:number = 35
 
-        public get RangeDaysCount():number {return this.RangeDays.length;}
-        public get RangeDays():Array<Moment> {
+        public get IsOverLimitRange():boolean {return this.MaxDiffs > this.MAX_DAYS_DIFF;}
+
+        private get ExcludedDaysDatePart():Array<Moment> {return _.map(this.Data.ExcludedDays, function(item) {return moment(item).startOf('days');});}
+
+        private get RangeDaysCount():number {return this.RangeDays.length;}
+        private get RangeDays():Array<Moment> {
             var days = [];
 
             //limit maximal range - performance reason
@@ -55,13 +55,8 @@ module VacationApproval{
             });
             return days;
         }
-        public get RangeWeekdaysCount():number {return this.RangeWeekdays.length;}
-        public get RangeWeekdays():Array<Moment> {
-            return _.difference(this.RangeDays,this.ExcludedWeekdays);
-        }
-
-        public get ExcludedWeekdaysCount():number {return this.ExcludedWeekdays.length;}
-        public get ExcludedWeekdays():Array<Moment> {
+        private get ExcludedWeekdaysCount():number {return this.ExcludedWeekdays.length;}
+        private get ExcludedWeekdays():Array<Moment> {
             var weekends = [];
 
             //limit maximal range - performance reason
@@ -73,20 +68,40 @@ module VacationApproval{
             return weekends;
         }
 
+        /**
+         * Return the number of days of vacation.
+         */
+        public get RangeWeekdaysCount():number {return this.RangeWeekdays.length;}
+        /**
+         * Return days of vacation.
+         */
+        public get RangeWeekdays():Array<Moment> {
+            return _.difference(this.RangeDays,this.ExcludedWeekdays);
+        }
+
+        /**
+         * Return the number of days excluded out of vacation.
+         */
         public get ExcludedDaysCount():number {return this.ExcludedDays.length;}
+
+        /**
+         * Return days excluded out of vacation.
+         */
         public get ExcludedDays():Array<Moment> {
             if (this.Data.ExcludedDays == undefined || this.Data.ExcludedDays.length == 0) return this.ExcludedWeekdays;
             return _.union(this.ExcludedWeekdays, this.ExcludedDaysDatePart);
         }
 
         /**
-         * Return the number of days of vacation.
+         * Return the number of days of vacation without explicitly excluded days.
          */
         public get VacationDaysCount():number {
             if (this.IsOverLimitRange) return this.MaxDiffs;
             return this.VacationDays.length;
         }
-
+        /**
+         * Return days of vacation without explicitly excluded days.
+         */
         public get VacationDays():Array<Moment> {
             return _.difference(this.RangeDays,this.ExcludedDays);
         }
