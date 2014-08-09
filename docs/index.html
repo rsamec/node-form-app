@@ -1,0 +1,749 @@
+﻿<!doctype html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Business rules | Business rules</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header>
+    <div class="tsd-page-toolbar">
+        <div class="container">
+            <div id="tsd-filter">
+                <input type="checkbox" id="tsd-filter-inherited" checked />
+                <label for="tsd-filter-inherited">Inherited</label>
+
+                <input type="checkbox" id="tsd-filter-private" checked />
+                <label for="tsd-filter-private">Private</label>
+
+                <input type="checkbox" id="tsd-filter-only-exported" />
+                <label for="tsd-filter-only-exported">Only exported</label>
+            </div>
+
+            <a href="index.html">Business rules</a>
+        </div>
+    </div>
+    <div class="tsd-page-title">
+        <div class="container">
+            <ul class="breadcrumb">
+                
+            </ul>
+            <h1> Business rules</h1>
+        </div>
+    </div>
+</header>
+
+<div class="container container-main">
+    <div class="row">
+        <div class="col-8">
+            <h1 id="node-form-app">node-form-app</h1>
+<p>This application demonstrates usage of form validation engine <a href="https://github.com/rsamec/form">node-form</a> in NodeJS.
+It uses example of vacation approval.</p>
+<ul>
+<li>define business rules for vacation approval</li>
+<li>how to use these business rules</li>
+<li>how to display errors for different languages</li>
+<li>test all business rules</li>
+</ul>
+<p>More complex usages of form validation engine <a href="https://github.com/rsamec/form/wiki">node-form tutorial</a>.</p>
+<h2 id="install">Install</h2>
+<p>To install and run example</p>
+<pre><code class="lang-bash">git clone http<span class="hljs-variable">s:</span>//github.<span class="hljs-keyword">com</span>/rsamec/node-form-app
+npm install
+node <span class="hljs-built_in">index</span>
+</code></pre>
+<p>To run tests</p>
+<pre><code class="lang-bash">tsd reinstall
+grunt <span class="hljs-keyword">test</span>
+</code></pre>
+<p>All source code is written in typescript.
+To compile typescript</p>
+<pre><code class="lang-bash"><span class="hljs-keyword">REM</span> <span class="hljs-keyword">to</span> compile example usage
+tsc index.ts <span class="hljs-comment">--t ES5</span>
+<span class="hljs-keyword">REM</span> <span class="hljs-keyword">to</span> compile business rules
+tsc models/vacationApproval/BusinessRules.ts <span class="hljs-comment">--t ES5 --out vacationApproval.js</span>
+</code></pre>
+<h2 id="requirements-business-rules-for-vacation-approval">Requirements - business rules for vacation approval</h2>
+<p>Vacation request - basic business rules</p>
+<ul>
+<li>employee<ul>
+<li>name -&gt; first name + last name is required</li>
+</ul>
+</li>
+<li>duration<ul>
+<li>from and to is required</li>
+<li>from and to must be valid dates (expect weekends)</li>
+<li>from and to must be greater or equal today</li>
+<li>from and to must be less or equal 1 year</li>
+<li>from must be equal or before to field</li>
+<li>minimal duration (without excluded days) is 1 day</li>
+<li>maximal duration (without excluded days) is 25 days</li>
+<li>excluded days - must be in range given by from and to</li>
+</ul>
+</li>
+<li>deputy<ul>
+<li>first name + last name of deputy is required</li>
+<li>contact (email) is required</li>
+<li>can not select deputy have approved vacation at the same days (async)</li>
+</ul>
+</li>
+<li>at least one deputy is required -&gt; second deputy is optional</li>
+</ul>
+<h2 id="business-rules-definition">Business rules definition</h2>
+<ul>
+<li>define data structure for vacation approval</li>
+</ul>
+<pre><code class="lang-typescript">   <span class="hljs-javadoc">/**
+     * Data structure for vacation approval.
+     */</span>
+    export interface IVacationApprovalData {
+        Employee?:IPerson;
+        Deputy1?:IPerson;
+        Deputy2?:IPerson;
+        Duration?:IDuration;
+        Comment?:string;
+    }
+
+    <span class="hljs-javadoc">/**
+     * Data structure for vacation duration.
+     */</span>
+    export interface IDuration {
+        From:Date;
+        To:Date;
+        ExcludedDays?:number;
+    }
+
+    <span class="hljs-javadoc">/**
+     * Data structure for person.
+     */</span>
+    export interface IPerson {
+        Checked?:<span class="hljs-keyword">boolean</span>;
+        FirstName:string;
+        LastName:string;
+        Email?:string;
+    }
+</code></pre>
+<ul>
+<li>use person validator for Employee and Deputies and use duration valiator for Duration property</li>
+<li>define common person validator</li>
+<li>define specialized duration validator</li>
+</ul>
+<pre><code class="lang-typescript">
+  <span class="hljs-comment">//create main data validator</span>
+  <span class="hljs-keyword">var</span> validator = <span class="hljs-keyword">new</span> Validation.AbstractValidator&lt;IVacationApprovalData&gt;();
+
+  <span class="hljs-comment">//common person validator</span>
+  <span class="hljs-keyword">var</span> personValidator = <span class="hljs-keyword">this</span>.createPersonValidator();
+
+  <span class="hljs-comment">//assign validator to properties</span>
+  validator.ValidatorFor(<span class="hljs-string">"Employee"</span>, personValidator);
+  validator.ValidatorFor(<span class="hljs-string">"Deputy1"</span>, personValidator);
+  validator.ValidatorFor(<span class="hljs-string">"Deputy2"</span>, personValidator);
+
+  <span class="hljs-keyword">var</span> durationValidator = <span class="hljs-keyword">this</span>.createDurationValidator();
+  validator.ValidatorFor(<span class="hljs-string">"Duration"</span>, durationValidator);
+
+
+    <span class="hljs-keyword">private</span> createPersonValidator():Validation.IAbstractValidator&lt;IPerson&gt; {
+
+             <span class="hljs-comment">//create custom composite validator</span>
+             <span class="hljs-keyword">var</span> personValidator = <span class="hljs-keyword">new</span> Validation.AbstractValidator&lt;IPerson&gt;();
+
+             <span class="hljs-comment">//create validators</span>
+             <span class="hljs-keyword">var</span> required = <span class="hljs-keyword">new</span> Validation.RequiredValidator();
+             <span class="hljs-keyword">var</span> email = <span class="hljs-keyword">new</span> Validation.EmailValidator();
+             <span class="hljs-keyword">var</span> maxLength = <span class="hljs-keyword">new</span> Validation.MaxLengthValidator();
+             maxLength.MaxLength = <span class="hljs-number">15</span>;
+
+             <span class="hljs-comment">//assign validators to properties</span>
+             personValidator.RuleFor(<span class="hljs-string">"FirstName"</span>, required);
+             personValidator.RuleFor(<span class="hljs-string">"FirstName"</span>, maxLength);
+
+             personValidator.RuleFor(<span class="hljs-string">"LastName"</span>, required);
+             personValidator.RuleFor(<span class="hljs-string">"LastName"</span>, maxLength);
+
+             personValidator.RuleFor(<span class="hljs-string">"Email"</span>, required);
+             personValidator.RuleFor(<span class="hljs-string">"Email"</span>, email);
+
+             <span class="hljs-keyword">return</span> personValidator;
+         }
+
+    <span class="hljs-keyword">private</span> createDurationValidator():Validation.IAbstractValidator&lt;IDuration&gt; {
+
+            <span class="hljs-comment">//create custom composite validator</span>
+            <span class="hljs-keyword">var</span> validator = <span class="hljs-keyword">new</span> Validation.AbstractValidator&lt;IDuration&gt;();
+
+            <span class="hljs-comment">//create validators</span>
+            <span class="hljs-keyword">var</span> required = <span class="hljs-keyword">new</span> Validation.RequiredValidator();
+            <span class="hljs-keyword">var</span> greaterThanToday = <span class="hljs-keyword">new</span> FromToDateValidator();
+            greaterThanToday.FromOperator = Validation.CompareOperator.GreaterThanEqual;
+            greaterThanToday.From = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>();
+            greaterThanToday.ToOperator = Validation.CompareOperator.LessThanEqual;
+            greaterThanToday.To = moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({year: <span class="hljs-number">1</span>}).toDate();
+            greaterThanToday.IgnoreTime = <span class="hljs-literal">true</span>;
+
+            <span class="hljs-comment">//assign validators to properties</span>
+            validator.RuleFor(<span class="hljs-string">"From"</span>, required);
+            validator.RuleFor(<span class="hljs-string">"To"</span>, required);
+
+            validator.RuleFor(<span class="hljs-string">"From"</span>, greaterThanToday);
+            validator.RuleFor(<span class="hljs-string">"To"</span>, greaterThanToday);
+
+            <span class="hljs-comment">//create custom message for validation</span>
+            <span class="hljs-keyword">var</span> customErrorMessage = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(config, args)</span> </span>{
+                <span class="hljs-keyword">var</span> msg = config[<span class="hljs-string">"Msg"</span>]
+
+                <span class="hljs-keyword">var</span> format = config[<span class="hljs-string">"Format"</span>];
+                <span class="hljs-keyword">if</span> (format != <span class="hljs-literal">undefined</span>) {
+                    _.extend(args, {
+                        FormatedFrom: moment(args.From).format(format),
+                        FormatedTo: moment(args.To).format(format),
+                        FormatedAttemptedValue: moment(args.AttemptedValue).format(format)
+                    });
+                }
+
+                msg = msg.replace(<span class="hljs-string">'From'</span>, <span class="hljs-string">'FormatedFrom'</span>);
+                msg = msg.replace(<span class="hljs-string">'To'</span>, <span class="hljs-string">'FormatedTo'</span>);
+                msg = msg.replace(<span class="hljs-string">'AttemptedValue'</span>, <span class="hljs-string">'FormatedAttemptedValue'</span>);
+                <span class="hljs-keyword">return</span> Validation.StringFce.format(msg, args);
+            };
+
+            <span class="hljs-comment">//create validator function</span>
+            <span class="hljs-keyword">var</span> isBeforeFce = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(args:any)</span> </span>{
+                args.HasError = <span class="hljs-literal">false</span>;
+                args.ErrorMessage = <span class="hljs-string">""</span>;
+
+                <span class="hljs-comment">//no dates - &gt; nothing to validate</span>
+                <span class="hljs-keyword">if</span> (!_.isDate(<span class="hljs-keyword">this</span>.From) || !_.isDate(<span class="hljs-keyword">this</span>.To)) <span class="hljs-keyword">return</span>;
+                <span class="hljs-keyword">var</span> to = moment(<span class="hljs-keyword">this</span>.To).clone();
+                <span class="hljs-keyword">if</span> (moment(<span class="hljs-keyword">this</span>.From).startOf(<span class="hljs-string">'day'</span>).isAfter(moment(to).add({days: -<span class="hljs-number">1</span>}).startOf(<span class="hljs-string">'day'</span>))) {
+                    args.HasError = <span class="hljs-literal">true</span>;
+                    args.ErrorMessage = customErrorMessage({Msg:<span class="hljs-string">"Date from '{From}' must be before date to '{To}'."</span>,Format:<span class="hljs-string">'MM/DD/YYYY'</span>}, <span class="hljs-keyword">this</span>);
+                    args.TranslateArgs = {TranslateId: <span class="hljs-string">'BeforeDate'</span>, MessageArgs: <span class="hljs-keyword">this</span>, CustomMessage: customErrorMessage};
+                    <span class="hljs-keyword">return</span>;
+                }
+
+                <span class="hljs-keyword">var</span> maxDays:<span class="hljs-built_in">number</span> = <span class="hljs-number">30</span>
+                <span class="hljs-comment">//maximal duration</span>
+                <span class="hljs-keyword">if</span> (moment(<span class="hljs-keyword">this</span>.To).startOf(<span class="hljs-string">'day'</span>).diff(moment(<span class="hljs-keyword">this</span>.From).startOf(<span class="hljs-string">'day'</span>),<span class="hljs-string">'days'</span>) &gt; maxDays) {
+                    args.HasError = <span class="hljs-literal">true</span>;
+                    <span class="hljs-keyword">var</span> messageArgs = {MaxDays:maxDays};
+                    args.ErrorMessage = Validation.StringFce.format(<span class="hljs-string">"Maximal vacation duration is {MaxDays}'."</span>, messageArgs);
+                    args.TranslateArgs = {TranslateId: <span class="hljs-string">'MaxDuration'</span>, MessageArgs: messageArgs};
+
+                }
+            }
+
+            <span class="hljs-comment">//wrap validator function to named shared validation</span>
+            <span class="hljs-keyword">var</span> validatorFce = {Name: <span class="hljs-string">"VacationDuration"</span>, ValidationFce: isBeforeFce};
+
+            <span class="hljs-comment">//assigned shared validation to properties</span>
+            validator.ValidationFor(<span class="hljs-string">"From"</span>, validatorFce);
+            validator.ValidationFor(<span class="hljs-string">"To"</span>, validatorFce);
+
+            <span class="hljs-keyword">return</span>  validator;
+        }
+</code></pre>
+<h2 id="tests">Tests</h2>
+<p>Example of duration business rules test</p>
+<pre><code class="lang-typescript"> describe(<span class="hljs-string">'duration'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+
+        describe(<span class="hljs-string">'from and to fields'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+            it(<span class="hljs-string">'fill no dates'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                data.Duration = {};
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+
+            it(<span class="hljs-string">'fill empty dates'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-string">''</span>,
+                    To: <span class="hljs-string">''</span>
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'fill dates before today'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days: -<span class="hljs-number">1</span>}).toDate(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days: -<span class="hljs-number">1</span>}).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'fill dates qreater than one year from today'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>, days: <span class="hljs-number">1</span>}).toDate(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>, days: <span class="hljs-number">1</span>}).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'fill dates qreater than one year from today'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>, days: <span class="hljs-number">1</span>}).toDate(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>, days: <span class="hljs-number">1</span>}).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'fill today'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()
+
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+            });
+
+            it(<span class="hljs-string">'fill one year from today'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>}).toDate(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({years: <span class="hljs-number">1</span>}).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"From"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"To"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+            });
+
+        });
+
+        describe(<span class="hljs-string">'duration in days'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+            it(<span class="hljs-string">'zero duration'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"VacationDuration"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'negative duration'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({ days: -<span class="hljs-number">1</span> }).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"VacationDuration"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+
+            it(<span class="hljs-string">'minimal duration'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({ days: <span class="hljs-number">1</span> }).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"VacationDuration"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+            });
+
+            it(<span class="hljs-string">'maximal duration 30 days'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({ days: <span class="hljs-number">30</span> }).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"VacationDuration"</span>].HasErrors).to.equal(<span class="hljs-literal">false</span>);
+            });
+
+            it(<span class="hljs-string">'too big duration 31 days'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> </span>{
+                <span class="hljs-comment">//when</span>
+                <span class="hljs-comment">//when</span>
+                data.Duration = {
+                    From: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(),
+                    To: moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({ days: <span class="hljs-number">31</span> }).toDate()
+                };
+
+                <span class="hljs-comment">//exec</span>
+                businessRules.Validate();
+
+                <span class="hljs-comment">//verify</span>
+                expect(businessRules.Errors.Errors[<span class="hljs-string">"Duration"</span>].Errors[<span class="hljs-string">"VacationDuration"</span>].HasErrors).to.equal(<span class="hljs-literal">true</span>);
+            });
+        });
+    });
+</code></pre>
+<p>Output of all business rules for vacation are under tests.</p>
+<pre><code class="lang-bash">  business rules <span class="hljs-keyword">for</span> vacation approval
+    employee
+      <span class="hljs-keyword">first</span> <span class="hljs-property">name</span> + <span class="hljs-keyword">last</span> <span class="hljs-property">name</span>
+        √ fill no names
+        √ fill empty names
+        √ fill long names
+        √ fill <span class="hljs-keyword">some</span> names
+    duration
+      <span class="hljs-keyword">from</span> <span class="hljs-keyword">and</span> <span class="hljs-keyword">to</span> fields
+        √ fill no dates
+        √ fill empty dates
+        √ fill dates <span class="hljs-keyword">before</span> today
+        √ fill dates qreater than one <span class="hljs-property">year</span> <span class="hljs-keyword">from</span> today
+        √ fill dates qreater than one <span class="hljs-property">year</span> <span class="hljs-keyword">from</span> today
+        √ fill today
+        √ fill one <span class="hljs-property">year</span> <span class="hljs-keyword">from</span> today
+      duration <span class="hljs-keyword">in</span> days
+        √ zero duration
+        √ negative duration
+        √ minimal duration
+        √ maximal duration <span class="hljs-number">25</span> days (<span class="hljs-number">25</span> + <span class="hljs-number">10</span> weekends) (<span class="hljs-number">108</span>ms)
+        √ too big duration <span class="hljs-number">26</span> days (<span class="hljs-number">26</span> + <span class="hljs-number">10</span> weekends) (<span class="hljs-number">103</span>ms)
+      excluded days are <span class="hljs-keyword">in</span> duration range
+        √ <span class="hljs-keyword">is</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">of</span> duration range
+        √ <span class="hljs-keyword">is</span> one <span class="hljs-keyword">out of</span> duration range
+        √ <span class="hljs-keyword">is</span> more than one <span class="hljs-keyword">out of</span> duration range
+    deputy
+      <span class="hljs-keyword">first</span> <span class="hljs-property">name</span> + <span class="hljs-keyword">last</span> <span class="hljs-property">name</span>
+        √ fill no names
+        √ fill empty names
+        √ fill long names
+        √ fill <span class="hljs-keyword">some</span> names
+      email
+        √ fill no email
+        √ fill wrong email
+        √ fill <span class="hljs-keyword">some</span> email
+    deputy check <span class="hljs-keyword">with</span> <span class="hljs-type">list</span> <span class="hljs-keyword">of</span> all approved vacations <span class="hljs-keyword">that</span> they are <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> conflict
+      √ fill employee <span class="hljs-keyword">with</span> vacation <span class="hljs-keyword">and</span> confict <span class="hljs-keyword">in</span> days (<span class="hljs-number">1012</span>ms)
+      √ fill employee <span class="hljs-keyword">with</span> vacation <span class="hljs-keyword">and</span> confict <span class="hljs-keyword">in</span> days (<span class="hljs-number">1015</span>ms)
+    complex test
+
+      √ fill all fields correctly (<span class="hljs-number">1013</span>ms)
+
+  duration days
+    range days
+      √ <span class="hljs-keyword">the</span> same days - <span class="hljs-constant">return</span> <span class="hljs-number">1</span> <span class="hljs-property">day</span>
+      √ positive range - <span class="hljs-type">number</span> <span class="hljs-keyword">of</span> days
+      √ negative range - zero <span class="hljs-property">day</span>
+    vacation days - exclude weekends
+      √ positive range - one weekend
+      √ negative range - zero <span class="hljs-property">day</span>
+      √ positive range - three weekends
+    vacation days - specific exclude - e.g. public holiday
+      √ within weekdays Wednesday, July <span class="hljs-number">30</span>th <span class="hljs-number">2014</span>
+</code></pre>
+<h2 id="basic-usage">Basic usage</h2>
+<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> moment <span class="hljs-subst">=</span> <span class="hljs-keyword">require</span>(<span class="hljs-string">'moment'</span>);
+<span class="hljs-keyword">import</span> _ <span class="hljs-subst">=</span> <span class="hljs-keyword">require</span>(<span class="hljs-string">'underscore'</span>);
+<span class="hljs-keyword">import</span> Validation <span class="hljs-subst">=</span> <span class="hljs-keyword">require</span>(<span class="hljs-string">'node-form'</span>);
+<span class="hljs-built_in">var</span> VacationApproval <span class="hljs-subst">=</span> <span class="hljs-keyword">require</span>(<span class="hljs-string">'./models/vacationApproval/vacationApproval.js'</span>);
+
+<span class="hljs-comment">//create test data</span>
+<span class="hljs-built_in">var</span> <span class="hljs-built_in">data</span>:VacationApproval<span class="hljs-built_in">.</span>IVacationApprovalData <span class="hljs-subst">=</span> {
+                Employee: {
+                    FirstName: <span class="hljs-string">'John'</span>,
+                    LastName: <span class="hljs-string">'Smith toooooooooooooooooooooooooo long'</span>
+                },
+                Deputy1: {
+                    Checked:<span class="hljs-literal">true</span>,
+                    FirstName: <span class="hljs-string">'Paul'</span>,
+                    LastName: <span class="hljs-string">'Neuman'</span>,
+                    Email: <span class="hljs-string">'pneuman@gmai.com'</span>
+                },
+                <span class="hljs-built_in">Duration</span>: {
+                    From: <span class="hljs-literal">new</span> <span class="hljs-built_in">Date</span>(),
+                    <span class="hljs-keyword">To</span>: moment(<span class="hljs-literal">new</span> <span class="hljs-built_in">Date</span>())<span class="hljs-built_in">.</span>add(<span class="hljs-string">'days'</span>, <span class="hljs-number">1</span>)<span class="hljs-built_in">.</span>toDate()
+                }
+            };
+
+
+<span class="hljs-comment">//business rules for vacation approval</span>
+<span class="hljs-built_in">var</span> businessRules <span class="hljs-subst">=</span> <span class="hljs-literal">new</span> VacationApproval<span class="hljs-built_in">.</span>BusinessRules(<span class="hljs-built_in">data</span>);
+
+<span class="hljs-comment">//execute validation</span>
+businessRules<span class="hljs-built_in">.</span>Validate();
+
+<span class="hljs-comment">//verify and display results</span>
+<span class="hljs-keyword">if</span> (businessRules<span class="hljs-built_in">.</span>Errors<span class="hljs-built_in">.</span>HasErrors) console<span class="hljs-built_in">.</span><span class="hljs-keyword">log</span>(businessRules<span class="hljs-built_in">.</span>Errors<span class="hljs-built_in">.</span>ErrorMessage);
+</code></pre>
+<p>Output</p>
+<pre><code class="lang-bash"><span class="hljs-title">Please</span> enter <span class="hljs-built_in">no</span> more than <span class="hljs-number">15</span> characters.
+</code></pre>
+<h2 id="example-usage-with-localization-support-">Example usage with localization support.</h2>
+<p>These example displays pretty error messages in english or czech localization.</p>
+<pre><code class="lang-typescript"><span class="hljs-comment">///&lt;reference path='typings/node-form/node-form.d.ts'/&gt;</span>
+<span class="hljs-comment">///&lt;reference path='typings/node/node.d.ts'/&gt;</span>
+<span class="hljs-comment">///&lt;reference path='typings/i18n-2/i18n-2.d.ts'/&gt;</span>
+<span class="hljs-comment">///&lt;reference path='typings/underscore/underscore.d.ts'/&gt;</span>
+<span class="hljs-comment">///&lt;reference path='typings/moment/moment.d.ts'/&gt;</span>
+
+<span class="hljs-comment">///&lt;reference path='models/vacationApproval/vacationApproval.d.ts'/&gt;</span>
+
+<span class="hljs-keyword">import</span> moment = <span class="hljs-built_in">require</span>(<span class="hljs-string">'moment'</span>);
+<span class="hljs-keyword">import</span> _ = <span class="hljs-built_in">require</span>(<span class="hljs-string">'underscore'</span>);
+<span class="hljs-keyword">import</span> i18n = <span class="hljs-built_in">require</span>(<span class="hljs-string">'i18n-2'</span>);
+<span class="hljs-keyword">import</span> Validation = <span class="hljs-built_in">require</span>(<span class="hljs-string">'node-form'</span>);
+<span class="hljs-keyword">var</span> VacationApproval = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./models/vacationApproval/vacationApproval.js'</span>);
+
+<span class="hljs-keyword">var</span> local  = <span class="hljs-keyword">new</span> i18n({locales:[<span class="hljs-string">'en'</span>,<span class="hljs-string">'cz'</span>],extension:<span class="hljs-string">'.json'</span>});
+local.setLocale(<span class="hljs-string">'en'</span>);
+
+<span class="hljs-comment">//create test data</span>
+<span class="hljs-keyword">var</span> data:VacationApproval.IVacationApprovalData = {};
+
+
+<span class="hljs-comment">//business rules for vacation approval</span>
+<span class="hljs-keyword">var</span> businessRules = <span class="hljs-keyword">new</span> VacationApproval.BusinessRules(data,<span class="hljs-literal">undefined</span>);
+
+
+<span class="hljs-comment">//execute validation</span>
+businessRules.Validate();
+
+<span class="hljs-comment">//verify results</span>
+<span class="hljs-keyword">if</span> (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,<span class="hljs-number">0</span>)
+
+<span class="hljs-comment">//fill some fields</span>
+data.Employee.FirstName = <span class="hljs-string">"John"</span>;
+data.Employee.LastName = <span class="hljs-string">"Smith toooooooooooooooooooooooooo long"</span>;
+
+data.Duration.From = moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days:-<span class="hljs-number">1</span>}).toDate();
+data.Duration.To = moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days:-<span class="hljs-number">10</span>}).toDate();
+
+<span class="hljs-comment">//execute validation</span>
+businessRules.Validate();
+
+<span class="hljs-comment">//verify results</span>
+<span class="hljs-keyword">if</span> (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,<span class="hljs-number">0</span>);
+
+
+<span class="hljs-comment">//fill all fields</span>
+data.Employee.LastName = <span class="hljs-string">"Smith"</span>;
+
+
+data.Deputy1.FirstName = <span class="hljs-string">"John"</span>;
+data.Deputy1.LastName = <span class="hljs-string">"Smith"</span>;
+data.Deputy1.Email = <span class="hljs-string">"jsmith@gmail.com"</span>;
+
+data.Duration.From = moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days:<span class="hljs-number">1</span>}).toDate();
+data.Duration.To = moment(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>()).add({days:<span class="hljs-number">4</span>}).toDate();
+
+<span class="hljs-comment">//execute validation</span>
+businessRules.Validate();
+
+<span class="hljs-comment">//verify results</span>
+displayErrors(businessRules.Errors,<span class="hljs-number">0</span>);
+</code></pre>
+<h4 id="output-local-setlocale-en-">Output - local.setLocale(&#39;en&#39;);</h4>
+<pre><code class="lang-bash">-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>Data:
+-<span class="ruby">-<span class="hljs-constant">Employee</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">First</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">Last</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">-<span class="hljs-constant">Deputy</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">First</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">Last</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">Email</span><span class="hljs-symbol">:This</span> field is required.
+</span>-<span class="ruby">-<span class="hljs-constant">Duration</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">From</span><span class="hljs-symbol">:This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">To</span><span class="hljs-symbol">:This</span> field is required.
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>Data:
+-<span class="ruby">-<span class="hljs-constant">Employee</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Last</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">Please</span> enter no more than <span class="hljs-number">15</span> characters.
+</span>-<span class="ruby">-<span class="hljs-constant">Deputy</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">First</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">Last</span> <span class="hljs-symbol">name:</span><span class="hljs-constant">This</span> field is required.
+</span>-<span class="ruby">---<span class="hljs-constant">Email</span><span class="hljs-symbol">:This</span> field is required.
+</span>-<span class="ruby">-<span class="hljs-constant">Duration</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">From</span><span class="hljs-symbol">:Date</span> must be between (<span class="hljs-string">'07/27/2014'</span> - <span class="hljs-string">'07/27/2015'</span>).
+</span>-<span class="ruby">---<span class="hljs-constant">To</span><span class="hljs-symbol">:Date</span> must be between (<span class="hljs-string">'07/27/2014'</span> - <span class="hljs-string">'07/27/2015'</span>).
+</span>-<span class="ruby">---<span class="hljs-constant">Vacation</span> <span class="hljs-symbol">duration:</span><span class="hljs-constant">Date</span> <span class="hljs-string">'07/26/2014'</span> must be before <span class="hljs-string">'07/17/2014'</span>.
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>There are no errors.
+</code></pre>
+<h4 id="output-local-setlocale-cz-">Output - local.setLocale(&#39;cz&#39;);</h4>
+<pre><code class="lang-bash">-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>Data:
+-<span class="ruby">-<span class="hljs-constant">Zam</span>ě<span class="hljs-symbol">stnanec:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Jm</span>é<span class="hljs-symbol">no:</span><span class="hljs-constant">Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">P</span>říjmení<span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">-<span class="hljs-constant">Z</span>á<span class="hljs-symbol">stupce:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Jm</span>é<span class="hljs-symbol">no:</span><span class="hljs-constant">Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">P</span>říjmení<span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">Email</span><span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">-<span class="hljs-constant">Doba</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Od</span><span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">Do</span><span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>Data:
+-<span class="ruby">-<span class="hljs-constant">Zam</span>ě<span class="hljs-symbol">stnanec:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">P</span>říjmení<span class="hljs-symbol">:Pros</span>ím, zadejte nejvíce <span class="hljs-number">15</span> znaků.
+</span>-<span class="ruby">-<span class="hljs-constant">Z</span>á<span class="hljs-symbol">stupce:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Jm</span>é<span class="hljs-symbol">no:</span><span class="hljs-constant">Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">P</span>říjmení<span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">---<span class="hljs-constant">Email</span><span class="hljs-symbol">:Toto</span> pole je povinné
+</span>-<span class="ruby">-<span class="hljs-constant">Doba</span><span class="hljs-symbol">:</span>
+</span>-<span class="ruby">---<span class="hljs-constant">Od</span><span class="hljs-symbol">:Datum</span> musí být mezi (<span class="hljs-string">'27.07.2014'</span> - <span class="hljs-string">'27.07.2015'</span>).
+</span>-<span class="ruby">---<span class="hljs-constant">Do</span><span class="hljs-symbol">:Datum</span> musí být mezi (<span class="hljs-string">'27.07.2014'</span> - <span class="hljs-string">'27.07.2015'</span>).
+</span>-<span class="ruby">---<span class="hljs-constant">Doba</span> dovolené<span class="hljs-symbol">:Datum</span> <span class="hljs-string">'26.07.2014'</span> musí být před datem <span class="hljs-string">'17.07.2014'</span>.
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>-<span class="ruby">- <span class="hljs-constant">Errors</span>
+</span>-<span class="ruby">-------------------------------------------------------------------------------------------------
+</span>Neexistují žádné chyby.
+</code></pre>
+<p>These is an example of function how to format pretty errors output.</p>
+<pre><code class="lang-typescript"><span class="hljs-keyword">var</span> displayErrors = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(node, indent)</span> </span>{
+
+    <span class="hljs-keyword">if</span> (indent == <span class="hljs-number">0</span>){
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Array</span>(<span class="hljs-number">50</span>).join(<span class="hljs-string">"--"</span>))
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"-- Errors"</span>);
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Array</span>(<span class="hljs-number">50</span>).join(<span class="hljs-string">"--"</span>))
+    }
+
+    <span class="hljs-keyword">if</span> (!node.HasErrors) {
+        <span class="hljs-built_in">console</span>.log(local.__(<span class="hljs-string">"NoErrors"</span>));
+        <span class="hljs-keyword">return</span>;
+    }
+    <span class="hljs-keyword">if</span> (node.Children.length ==<span class="hljs-number">0</span>) {
+
+        <span class="hljs-comment">//stopped recursion</span>
+        <span class="hljs-keyword">var</span> msg = local.__(node.Name) + <span class="hljs-string">":"</span>;
+
+        _.each(node[<span class="hljs-string">"Errors"</span>], <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(childError:Validation.IValidationFailure, key:string)</span> </span>{
+            <span class="hljs-keyword">if</span> (childError.HasError) {
+
+                <span class="hljs-comment">//display validation failure - process translateArgs</span>
+                <span class="hljs-keyword">var</span> failure:Validation.IErrorTranslateArgs = childError.TranslateArgs;
+
+                <span class="hljs-comment">//custom messages</span>
+                <span class="hljs-keyword">if</span> (failure[<span class="hljs-string">"CustomMessage"</span>] == <span class="hljs-literal">undefined</span>) {
+                    <span class="hljs-comment">//call standard translation</span>
+                    msg += failure == <span class="hljs-literal">undefined</span> ? failure.TranslateId : Validation.StringFce.format(local.__(failure.TranslateId), failure.MessageArgs);
+                }
+                <span class="hljs-keyword">else</span> {
+                    <span class="hljs-comment">//call custom messages function - pass translation config and message args</span>
+                    msg += failure == <span class="hljs-literal">undefined</span> ? failure.TranslateId : failure[<span class="hljs-string">"CustomMessage"</span>](local.__(failure.TranslateId), failure.MessageArgs);
+                }
+                <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Array</span>(indent + <span class="hljs-number">1</span>).join(<span class="hljs-string">"--"</span>) + msg);
+            }
+        });
+    }
+    <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">//log name</span>
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Array</span>(++indent).join(<span class="hljs-string">"--"</span>) + local.__(node.Name) + <span class="hljs-string">":"</span>);
+
+        <span class="hljs-comment">//recursive call for children errors</span>
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>, len = node.Children.length; i &lt; len; i++) {
+            <span class="hljs-keyword">if</span> (node.Children[i].HasErrors) displayErrors(node.Children[i], indent);
+        }
+    }
+}
+</code></pre>
+
+        </div>
+        <div class="offset-1 col-3">
+            <nav class="tsd-navigation primary">
+                <ul>
+                    
+                        <li class=" ">
+    <a href="globals.html"><em>Globals</em></a>
+    
+</li>
+                    
+                        <li class=" tsd-kind-container">
+    <a href="modules/vacationapproval.html">VacationApproval</a>
+    
+</li>
+                    
+                </ul>
+            </nav>
+
+            <nav class="tsd-navigation secondary">
+                
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/main.js"></script>
+
+</body>
+</html>
