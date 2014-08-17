@@ -67,6 +67,16 @@ module.exports = function (grunt) {
                     comments:true
                 }
             },
+            invoice: {
+                src: ['src/models/invoice/BusinessRules.ts'],
+                dest: 'dist/invoice/invoice.js',
+                options: {
+                    //module: 'amd',
+                    target: 'es5',
+                    declaration: true,
+                    comments:true
+                }
+            },
             test:{
                 src: ['test/models/vacationApproval/*.ts'],
                 dest: '',
@@ -111,9 +121,12 @@ module.exports = function (grunt) {
         concat: {
             dist: {
                 files: {
-                    //'dist/basic.js': ['src/main.js'],
                     'dist/vacationApproval/node-vacationApproval.js': ['<%= typescript.base.dest %>', 'src/models/vacationApproval/commonjs.js']
-
+                }
+            },
+            invoice: {
+                files: {
+                    'dist/invoice/node-invoice.js': ['<%= typescript.invoice.dest %>', 'src/models/invoice/commonjs.js']
                 }
             }
          }
@@ -134,5 +147,6 @@ module.exports = function (grunt) {
     grunt.registerTask('ci', ['complexity', 'jshint', 'mochacli']);
     grunt.registerTask('default', ['test']);
     grunt.registerTask('dist', ['typescript:base','concat:dist','uglify','copy']);
+    grunt.registerTask('invoice', ['typescript:invoice','concat:invoice']);
     grunt.registerTask('document', ['typedoc']);
 };

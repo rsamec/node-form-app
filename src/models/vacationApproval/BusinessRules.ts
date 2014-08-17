@@ -2,13 +2,13 @@
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/BasicValidators.d.ts'/>
 
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 ///<reference path='Duration.ts'/>
 "use strict";
 module VacationApproval {
-
     /**
      * Business rules for vacation approval.
      *
@@ -26,7 +26,6 @@ module VacationApproval {
          * Business rules for first deputy for employee having the vacation.
          */
         public Deputy1Validator;
-
 
 
         /**
@@ -108,6 +107,7 @@ module VacationApproval {
             this.VacationApprovalErrors = this.VacationApprovalValidator.ValidationResult.Errors;
             this.Errors = this.VacationRequestValidator.ValidationResult;
         }
+
 
         /**
          * Executes all business rules for validation request.
@@ -223,9 +223,9 @@ module VacationApproval {
             var personValidator = new Validation.AbstractValidator<IPerson>();
 
             //create validators
-            var required = new Validation.RequiredValidator();
-            var email = new Validation.EmailValidator();
-            var maxLength = new Validation.MaxLengthValidator();
+            var required = new Validators.RequiredValidator();
+            var email = new Validators.EmailValidator();
+            var maxLength = new Validators.MaxLengthValidator();
             maxLength.MaxLength = 15;
 
             //assign validators to properties

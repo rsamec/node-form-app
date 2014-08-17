@@ -7,7 +7,9 @@
 var moment = require('moment');
 var _ = require('underscore');
 var i18n = require('i18n-2');
-var Validation = require('node-form');
+
+var Validators = require('node-form/customValidators/BasicValidators');
+var Utils = require('node-form/customValidators/Utils');
 var VacationApproval = require('./dist/vacationApproval/node-vacationApproval.js');
 var FakeVacationDeputyService = require('./test/models/vacationApproval/FakeVacationDeputyService.js');
 var en = require('node-form/i18n/messages_en.js');
@@ -50,7 +52,7 @@ var displayErrors = function (node, indent) {
                     //custom messages
                     if (failure["CustomMessage"] == undefined) {
                         //call standard translation
-                        msg += failure == undefined ? failure.TranslateId : Validation.StringFce.format(local.__(failure.TranslateId), failure.MessageArgs);
+                        msg += failure == undefined ? failure.TranslateId : Utils.StringFce.format(local.__(failure.TranslateId), failure.MessageArgs);
                     } else {
                         //call custom messages function - pass translation config and message args
                         msg += failure == undefined ? failure.TranslateId : failure["CustomMessage"](local.__(failure.TranslateId), failure.MessageArgs);

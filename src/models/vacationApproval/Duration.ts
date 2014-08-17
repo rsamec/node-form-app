@@ -1,6 +1,7 @@
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/BasicValidators.d.ts'/>
 
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='IsWeekdayValidator.ts'/>
@@ -113,7 +114,7 @@ module VacationApproval{
             var validator = new Validation.AbstractValidator<IDuration>();
 
             //create validators
-            var required = new Validation.RequiredValidator();
+            var required = new Validators.RequiredValidator();
             var weekDay = new IsWeekdayValidator();
             var greaterThanToday = new FromToDateValidator();
             greaterThanToday.FromOperator = Validation.CompareOperator.GreaterThanEqual;
@@ -148,7 +149,7 @@ module VacationApproval{
                 msg = msg.replace('From', 'FormatedFrom');
                 msg = msg.replace('To', 'FormatedTo');
                 msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-                return Validation.StringFce.format(msg, args);
+                return Utils.StringFce.format(msg, args);
             };
 
             var self = this;
@@ -174,7 +175,7 @@ module VacationApproval{
                 if (self.IsOverLimitRange || (self.VacationDaysCount > maxDays || self.VacationDaysCount < minDays)) {
                     args.HasError = true;
                     var messageArgs = {MaxDays:maxDays, MinDays:minDays};
-                    args.ErrorMessage = Validation.StringFce.format("Vacation duration value must be between {MinDays] and {MaxDays} days.", messageArgs);
+                    args.ErrorMessage = Utils.StringFce.format("Vacation duration value must be between {MinDays] and {MaxDays} days.", messageArgs);
                     args.TranslateArgs = {TranslateId: 'RangeDuration', MessageArgs: messageArgs};
                     return;
                 }
@@ -184,7 +185,7 @@ module VacationApproval{
                 if (diff.length != 0){
                     args.HasError = true;
                     var messageArgs2 = {ExcludedDates:_.reduce(diff,function(memo,item:Moment){return memo + item.format("MM/DD/YYYY");})};
-                    args.ErrorMessage = Validation.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
+                    args.ErrorMessage = Utils.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
                     args.TranslateArgs = {TranslateId: 'ExcludedDaysMsg', MessageArgs: messageArgs2};
                     return;
                 }

@@ -1,6 +1,7 @@
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/Utils.d.ts'/>
 "use strict";
 var VacationApproval;
 (function (VacationApproval) {
@@ -75,7 +76,8 @@ var VacationApproval;
             msg = msg.replace('From', 'FormatedFrom');
             msg = msg.replace('To', 'FormatedTo');
             msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-            return Validation.StringFce.format(msg, msgArgs);
+
+            return Utils.StringFce.format(msg, msgArgs);
         };
         return FromToDateValidator;
     })();
@@ -112,6 +114,7 @@ var VacationApproval;
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/BasicValidators.d.ts'/>
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='IsWeekdayValidator.ts'/>
 ///<reference path='Data.ts'/>
@@ -319,7 +322,7 @@ var VacationApproval;
             var validator = new Validation.AbstractValidator();
 
             //create validators
-            var required = new Validation.RequiredValidator();
+            var required = new Validators.RequiredValidator();
             var weekDay = new VacationApproval.IsWeekdayValidator();
             var greaterThanToday = new VacationApproval.FromToDateValidator();
             greaterThanToday.FromOperator = 4 /* GreaterThanEqual */;
@@ -354,7 +357,7 @@ var VacationApproval;
                 msg = msg.replace('From', 'FormatedFrom');
                 msg = msg.replace('To', 'FormatedTo');
                 msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-                return Validation.StringFce.format(msg, args);
+                return Utils.StringFce.format(msg, args);
             };
 
             var self = this;
@@ -382,7 +385,7 @@ var VacationApproval;
                 if (self.IsOverLimitRange || (self.VacationDaysCount > maxDays || self.VacationDaysCount < minDays)) {
                     args.HasError = true;
                     var messageArgs = { MaxDays: maxDays, MinDays: minDays };
-                    args.ErrorMessage = Validation.StringFce.format("Vacation duration value must be between {MinDays] and {MaxDays} days.", messageArgs);
+                    args.ErrorMessage = Utils.StringFce.format("Vacation duration value must be between {MinDays] and {MaxDays} days.", messageArgs);
                     args.TranslateArgs = { TranslateId: 'RangeDuration', MessageArgs: messageArgs };
                     return;
                 }
@@ -393,7 +396,7 @@ var VacationApproval;
                     var messageArgs2 = { ExcludedDates: _.reduce(diff, function (memo, item) {
                             return memo + item.format("MM/DD/YYYY");
                         }) };
-                    args.ErrorMessage = Validation.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
+                    args.ErrorMessage = Utils.StringFce.format("Excluded days are not in range. '{ExcludedDates}'.", messageArgs2);
                     args.TranslateArgs = { TranslateId: 'ExcludedDaysMsg', MessageArgs: messageArgs2 };
                     return;
                 }
@@ -415,6 +418,7 @@ var VacationApproval;
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/BasicValidators.d.ts'/>
 ///<reference path='FromToDateValidator.ts'/>
 ///<reference path='Data.ts'/>
 ///<reference path='Duration.ts'/>
@@ -561,9 +565,9 @@ var VacationApproval;
             var personValidator = new Validation.AbstractValidator();
 
             //create validators
-            var required = new Validation.RequiredValidator();
-            var email = new Validation.EmailValidator();
-            var maxLength = new Validation.MaxLengthValidator();
+            var required = new Validators.RequiredValidator();
+            var email = new Validators.EmailValidator();
+            var maxLength = new Validators.MaxLengthValidator();
             maxLength.MaxLength = 15;
 
             //assign validators to properties

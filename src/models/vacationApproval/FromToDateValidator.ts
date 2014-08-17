@@ -1,6 +1,8 @@
 ///<reference path='../../../typings/moment/moment.d.ts'/>
 ///<reference path='../../../typings/underscore/underscore.d.ts'/>
 ///<reference path='../../../typings/node-form/node-form.d.ts'/>
+///<reference path='../../../typings/node-form/Utils.d.ts'/>
+
 "use strict";
 module VacationApproval {
 
@@ -75,10 +77,14 @@ module VacationApproval {
                 };
             }
 
+
             msg = msg.replace('From', 'FormatedFrom');
             msg = msg.replace('To', 'FormatedTo');
             msg = msg.replace('AttemptedValue', 'FormatedAttemptedValue');
-            return Validation.StringFce.format(msg, msgArgs);
+
+
+            return Utils.StringFce.format(msg, msgArgs);
+
         }
 
         tagName = "dateCompareExt";
