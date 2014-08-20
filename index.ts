@@ -11,11 +11,11 @@
 import _ = require('underscore');
 import Q = require('q');
 var moment = require('moment-range');
-import i18n = require('i18n-2');
 var Validation = require('business-rules-engine');
 var VacationApproval = require('br-vacation-approval');
 var Utils = require("business-rules-engine/commonjs/Utils");
 
+import i18n = require('i18n-2');
 var en = require('business-rules-engine/commonjs/i18n/messages_en.js');
 var cz = require('business-rules-engine/commonjs/i18n/messages_cs.js');
 var de = require('business-rules-engine/commonjs/i18n/messages_de.js');

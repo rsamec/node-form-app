@@ -70,58 +70,25 @@ Please enter no more than 15 characters.
 
 ## Example usage with localization support.
 
-These example displays pretty error messages in english or czech localization.
+These example displays pretty error messages in english, german and czech localization.
 
 ```typescript
 
-import Validation = require('business-rules-engine');
-import VacationApproval = require('br-vacation-approval');
+import i18n = require('i18n-2');
+var en = require('business-rules-engine/commonjs/i18n/messages_en.js');
+var cz = require('business-rules-engine/commonjs/i18n/messages_cs.js');
+var de = require('business-rules-engine/commonjs/i18n/messages_de.js');
 
+//localization support
+var local  = new i18n({
+    locales:['en','cz','de'],
+    directory: 'node_modules/br-vacation-approval/i18n',
+    extension:'.json'});
 
-//create test data
-var data:VacationApproval.IVacationApprovalData = {};
+_.extend(local.locales['en'],en.ValidationMessages);
+_.extend(local.locales['cz'],cz.ValidationMessages);
+_.extend(local.locales['de'],de.ValidationMessages);
 
-
-//business rules for vacation approval
-var businessRules = new VacationApproval.BusinessRules(data,undefined);
-
-
-//execute validation
-businessRules.Validate();
-
-//verify results
-if (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,0)
-
-//fill some fields
-data.Employee.FirstName = "John";
-data.Employee.LastName = "Smith toooooooooooooooooooooooooo long";
-
-data.Duration.From = moment(new Date()).add({days:-1}).toDate();
-data.Duration.To = moment(new Date()).add({days:-10}).toDate();
-
-//execute validation
-businessRules.Validate();
-
-//verify results
-if (businessRules.Errors.HasErrors) displayErrors(businessRules.Errors,0);
-
-
-//fill all fields
-data.Employee.LastName = "Smith";
-
-
-data.Deputy1.FirstName = "John";
-data.Deputy1.LastName = "Smith";
-data.Deputy1.Email = "jsmith@gmail.com";
-
-data.Duration.From = moment(new Date()).add({days:1}).toDate();
-data.Duration.To = moment(new Date()).add({days:4}).toDate();
-
-//execute validation
-businessRules.Validate();
-
-//verify results
-displayErrors(businessRules.Errors,0);
 ```
 
 #### Output for locales:['en','cz','de'],
