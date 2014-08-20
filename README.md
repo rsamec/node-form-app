@@ -1,13 +1,16 @@
 node-form-app
 =============
 
-This application demonstrates usage of form validation engine [business-rules-engine](https://github.com/rsamec/business-rules-engine) in NodeJS.
-It uses example of vacation approval.
+This application demonstrates usage of business rules engine [business-rules-engine](https://github.com/rsamec/business-rules-engine) in NodeJS.
+It uses example of [vacation approval business rules] (https://github.com/rsamec/business-rules/blob/master/dist/vacationApproval/README.md) - see [API documentation] (http://rsamec.github.io/business-rules/docs/classes/vacationapproval.businessrules.html).
+
 
 +   how to use business rules for vacation approval
 +   how to display errors for different languages
 
-More complex usages of form validation engine [business-rules-engine tutorial](https://github.com/rsamec/business-rules-engine/wiki).
+More complex usages of business rules engine [Tutorial](https://github.com/rsamec/business-rules-engine/wiki).
+
+Find more business rules example in [business rules repository] (https://github.com/rsamec/business-rules) - see [API documentation] (http://rsamec.github.io/business-rules/docs/globals.html).
 
 ## Install
 
