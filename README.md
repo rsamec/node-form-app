@@ -1,13 +1,13 @@
 node-form-app
 =============
 
-This application demonstrates usage of form validation engine [node-form](https://github.com/rsamec/form) in NodeJS.
+This application demonstrates usage of form validation engine [business-rules-engine](https://github.com/rsamec/business-rules-engine) in NodeJS.
 It uses example of vacation approval.
 
 +   how to use business rules for vacation approval
 +   how to display errors for different languages
 
-More complex usages of form validation engine [node-form tutorial](https://github.com/rsamec/form/wiki).
+More complex usages of form validation engine [business-rules-engine tutorial](https://github.com/rsamec/business-rules-engine/wiki).
 
 ## Install
 
@@ -31,7 +31,7 @@ tsc index.ts --t ES5 -m commonjs
 ## Basic usage
 
 ```typescript
-import Validation = require('node-form');
+import Validation = require('business-rules-engine');
 import VacationApproval = require('br-vacation-approval');
 
 //create test data
@@ -73,21 +73,10 @@ Please enter no more than 15 characters.
 These example displays pretty error messages in english or czech localization.
 
 ```typescript
-///<reference path='typings/node-form/node-form.d.ts'/>
-///<reference path='typings/node/node.d.ts'/>
-///<reference path='typings/i18n-2/i18n-2.d.ts'/>
-///<reference path='typings/underscore/underscore.d.ts'/>
-///<reference path='typings/moment/moment.d.ts'/>
 
-///<reference path='models/vacationApproval/vacationApproval.d.ts'/>
+import Validation = require('business-rules-engine');
+import VacationApproval = require('br-vacation-approval');
 
-import _ = require('underscore');
-import i18n = require('i18n-2');
-import Validation = require('node-form');
-var VacationApproval = require('./models/vacationApproval/vacationApproval.js');
-
-var local  = new i18n({locales:['en','cz'],extension:'.json'});
-local.setLocale('en');
 
 //create test data
 var data:VacationApproval.IVacationApprovalData = {};
@@ -135,79 +124,101 @@ businessRules.Validate();
 displayErrors(businessRules.Errors,0);
 ```
 
-#### Output - local.setLocale('en');
+#### Output for locales:['en','cz','de'],
 ```bash
 --------------------------------------------------------------------------------------------------
 -- Errors
 --------------------------------------------------------------------------------------------------
-Data:
---Employee:
-----First name:This field is required.
-----Last name:This field is required.
---Deputy:
-----First name:This field is required.
-----Last name:This field is required.
-----Email:This field is required.
---Duration:
-----From:This field is required.
-----To:This field is required.
---------------------------------------------------------------------------------------------------
--- Errors
---------------------------------------------------------------------------------------------------
-Data:
+Vacation:
 --Employee:
 ----Last name:Please enter no more than 15 characters.
 --Deputy:
 ----First name:This field is required.
 ----Last name:This field is required.
 ----Email:This field is required.
+--Approval:
+----ApprovedBy:
+------First name:This field is required.
+------Last name:This field is required.
+------Email:This field is required.
 --Duration:
-----From:Date must be between ('07/27/2014' - '07/27/2015').
-----To:Date must be between ('07/27/2014' - '07/27/2015').
-----Vacation duration:Date '07/26/2014' must be before '07/17/2014'.
+----From:Date must be between ('08/20/2014' - '08/20/2015').
+----To:Please select weekdays, weekends are not permitted. Date must be between ('08/20/2014' - '08/20/2015').
+----Vacation duration:Date '08/19/2014' must be before '08/10/2014'.
 --------------------------------------------------------------------------------------------------
 -- Errors
 --------------------------------------------------------------------------------------------------
-There are no errors.
-```
-
-#### Output - local.setLocale('cz');
-
-```bash
+Vacation:
+--Approval:
+----ApprovedBy:
+------First name:This field is required.
+------Last name:This field is required.
+------Email:This field is required.
+--Duration:
+----To:Please select weekdays, weekends are not permitted.
 --------------------------------------------------------------------------------------------------
--- Errors
+-- Fehlers
 --------------------------------------------------------------------------------------------------
-Data:
---Zaměstnanec:
-----Jméno:Toto pole je povinné
-----Příjmení:Toto pole je povinné
---Zástupce:
-----Jméno:Toto pole je povinné
-----Příjmení:Toto pole je povinné
-----Email:Toto pole je povinné
---Doba:
-----Od:Toto pole je povinné
-----Do:Toto pole je povinné
+Urlaub:
+--Arbeitnehmer:
+----Nachname:Geben Sie bitte maximal 15 Zeichen ein.
+--Vertreter:
+----Vorname:Dieses Feld ist ein Pflichtfeld.
+----Nachname:Dieses Feld ist ein Pflichtfeld.
+----Email:Dieses Feld ist ein Pflichtfeld.
+--Bestaetig:
+----Bestaetig von:
+------Vorname:Dieses Feld ist ein Pflichtfeld.
+------Nachname:Dieses Feld ist ein Pflichtfeld.
+------Email:Dieses Feld ist ein Pflichtfeld.
+--Dauer:
+----Von:Geben Sie bitte eines Datum zwischen ('20.08.2014' - '20.08.2015').
+----Bis:Geben Sie bitte eines Datum anders von Samstag or Sonntag. Geben Sie bitte eines Datum zwischen ('20.08.2014' - '20.08.2015').
+----Urlaubdauer:Das datum '19.08.2014' must vor dem datum '10.08.2014' sein.
 --------------------------------------------------------------------------------------------------
--- Errors
+-- Fehlers
 --------------------------------------------------------------------------------------------------
-Data:
+Urlaub:
+--Bestaetig:
+----Bestaetig von:
+------Vorname:Dieses Feld ist ein Pflichtfeld.
+------Nachname:Dieses Feld ist ein Pflichtfeld.
+------Email:Dieses Feld ist ein Pflichtfeld.
+--Dauer:
+----Bis:Geben Sie bitte eines Datum anders von Samstag or Sonntag.
+--------------------------------------------------------------------------------------------------
+-- Chyby
+--------------------------------------------------------------------------------------------------
+Dovolená:
 --Zaměstnanec:
 ----Příjmení:Prosím, zadejte nejvíce 15 znaků.
 --Zástupce:
-----Jméno:Toto pole je povinné
-----Příjmení:Toto pole je povinné
-----Email:Toto pole je povinné
+----Jméno:Tento údaj je povinný.
+----Příjmení:Tento údaj je povinný.
+----Email:Tento údaj je povinný.
+--Schválení:
+----Schváleno kým:
+------Jméno:Tento údaj je povinný.
+------Příjmení:Tento údaj je povinný.
+------Email:Tento údaj je povinný.
 --Doba:
-----Od:Datum musí být mezi ('27.07.2014' - '27.07.2015').
-----Do:Datum musí být mezi ('27.07.2014' - '27.07.2015').
-----Doba dovolené:Datum '26.07.2014' musí být před datem '17.07.2014'.
+----Od:Datum musí být mezi ('20.08.2014' - '20.08.2015').
+----Do:Datum nesmí být sobota nebo neděle. Datum musí být mezi ('20.08.2014' - '20.08.2015').
+----Doba dovolené:Datum '19.08.2014' musí být před datem '10.08.2014'.
 --------------------------------------------------------------------------------------------------
--- Errors
+-- Chyby
 --------------------------------------------------------------------------------------------------
-Neexistují žádné chyby.
+Dovolená:
+--Schválení:
+----Schváleno kým:
+------Jméno:Tento údaj je povinný.
+------Příjmení:Tento údaj je povinný.
+------Email:Tento údaj je povinný.
+--Doba:
+----Do:Datum nesmí být sobota nebo neděle.
 
 ```
+
 
 These is an example of function how to format pretty errors output.
 

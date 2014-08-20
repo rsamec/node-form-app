@@ -1,4 +1,4 @@
-///<reference path='typings/node-form/node-form.d.ts'/>
+///<reference path='typings/business-rules-engine/business-rules-engine.d.ts'/>
 ///<reference path='typings/node/node.d.ts'/>
 ///<reference path='typings/i18n-2/i18n-2.d.ts'/>
 ///<reference path='typings/underscore/underscore.d.ts'/>
@@ -12,12 +12,15 @@ import _ = require('underscore');
 import Q = require('q');
 var moment = require('moment-range');
 import i18n = require('i18n-2');
-import Validation = require('node-form');
+var Validation = require('business-rules-engine');
 var VacationApproval = require('br-vacation-approval');
+var Utils = require("business-rules-engine/commonjs/Utils");
 
-var en = require('node-form/i18n/messages_en.js');
-var cz = require('node-form/i18n/messages_cs.js');
-var de = require('node-form/i18n/messages_de.js');
+var en = require('business-rules-engine/commonjs/i18n/messages_en.js');
+var cz = require('business-rules-engine/commonjs/i18n/messages_cs.js');
+var de = require('business-rules-engine/commonjs/i18n/messages_de.js');
+
+
 
 /**
  * @name Custom async property validator example
@@ -136,53 +139,65 @@ var displayErrors = function(node, indent) {
     }
 }
 
-//set default culture
-local.setLocale('en');
 
-//create test data
-var data:VacationApproval.IVacationApprovalData = {};
 
-//business rules for vacation approval
-var businessRules = new VacationApproval.BusinessRules(data,new FakeVacationDeputyService());
+var execFce = function(lang) {
 
-//fill some fields
-data.Employee = {
-    FirstName: "John",
-    LastName: "Smith toooooooooooooooooooooooooo long"
-};
-data.Duration = {
-    From :moment(new Date()).add({days:-1}).toDate(),
-    To : moment(new Date()).add({days:-10}).toDate()
-};
+    //set default culture
+    local.setLocale(lang);
 
-//execute validation
-var promise = businessRules.Validate();
 
-promise.then(function(result){
-    //verify results
-    displayErrors(businessRules.Errors,0);
-},function(reason){console.log(reason)}).then(function() {
+    //create test data
+    var data:VacationApproval.IVacationApprovalData = {};
 
-    //fill additional fields
-    data.Employee.LastName = "Smith";
+    //business rules for vacation approval
+    var businessRules = new VacationApproval.BusinessRules(data,new FakeVacationDeputyService());
 
-    data.Deputy1.FirstName = "John";
-    data.Deputy1.LastName = "Smith";
-    data.Deputy1.Email = "jsmith@gmail.com";
+    //fill some fields
+    data.Employee = {
+        FirstName: "John",
+        LastName: "Smith toooooooooooooooooooooooooo long"
+    };
+    data.Duration = {
+        From :moment(new Date()).add({days:-1}).toDate(),
+        To : moment(new Date()).add({days:-10}).toDate()
+    };
 
-    data.Duration.From = moment(new Date()).add({days: 1}).toDate();
-    data.Duration.To = moment(new Date()).add({days: 3}).toDate();
-
-//execute validation
+    //execute validation
     var promise = businessRules.Validate();
 
-    promise.then(function (result) {
+    return promise.then(function (result) {
         //verify results
         displayErrors(businessRules.Errors, 0);
     }, function (reason) {
         console.log(reason)
-    })
-});
+    }).then(function () {
+
+        //fill additional fields
+        data.Employee.LastName = "Smith";
+
+        data.Deputy1.FirstName = "John";
+        data.Deputy1.LastName = "Smith";
+        data.Deputy1.Email = "jsmith@gmail.com";
+
+        data.Duration.From = moment(new Date()).add({days: 1}).toDate();
+        data.Duration.To = moment(new Date()).add({days: 3}).toDate();
+
+//execute validation
+        var promise = businessRules.Validate();
+
+        return promise.then(function (result) {
+            //verify results
+            displayErrors(businessRules.Errors, 0);
+        }, function (reason) {
+            console.log(reason)
+        })
+    });
+}
+
+execFce('en').then(function(){return execFce('de')}).then(function(){ return execFce('cz')});
+
+
 
 
 

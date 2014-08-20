@@ -1,21 +1,21 @@
-///<reference path='typings/node-form/node-form.d.ts'/>
+///<reference path='typings/business-rules-engine/business-rules-engine.d.ts'/>
 ///<reference path='typings/node/node.d.ts'/>
 ///<reference path='typings/i18n-2/i18n-2.d.ts'/>
 ///<reference path='typings/underscore/underscore.d.ts'/>
 ///<reference path='typings/moment/moment.d.ts'/>
 ///<reference path='typings/q/q.d.ts'/>
 ///<reference path='node_modules/br-vacation-approval/business-rules.d.ts'/>
-var moment = require('moment-range');
 var _ = require('underscore');
 var Q = require('q');
+var moment = require('moment-range');
 var i18n = require('i18n-2');
-
-var Validators = require('node-form/commonjs/BasicValidators');
-var Utils = require('node-form/commonjs/Utils');
+var Validation = require('business-rules-engine');
 var VacationApproval = require('br-vacation-approval');
-var en = require('node-form/i18n/messages_en.js');
-var cz = require('node-form/i18n/messages_cs.js');
-var de = require('node-form/i18n/messages_de.js');
+var Utils = require("business-rules-engine/commonjs/Utils");
+
+var en = require('business-rules-engine/commonjs/i18n/messages_en.js');
+var cz = require('business-rules-engine/commonjs/i18n/messages_cs.js');
+var de = require('business-rules-engine/commonjs/i18n/messages_de.js');
 
 /**
 * @name Custom async property validator example
@@ -68,7 +68,6 @@ var FakeVacationDeputyService = (function () {
     };
     return FakeVacationDeputyService;
 })();
-exports.FakeVacationDeputyService = FakeVacationDeputyService;
 
 //prepeare localization
 var local = new i18n({
@@ -128,51 +127,60 @@ var displayErrors = function (node, indent) {
     }
 };
 
-//set default culture
-local.setLocale('cz');
+var execFce = function (lang) {
+    //set default culture
+    local.setLocale(lang);
 
-//create test data
-var data = {};
+    //create test data
+    var data = {};
 
-//business rules for vacation approval
-var businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
+    //business rules for vacation approval
+    var businessRules = new VacationApproval.BusinessRules(data, new FakeVacationDeputyService());
 
-//fill some fields
-data.Employee = {
-    FirstName: "John",
-    LastName: "Smith toooooooooooooooooooooooooo long"
-};
-data.Duration = {
-    From: moment(new Date()).add({ days: -1 }).toDate(),
-    To: moment(new Date()).add({ days: -10 }).toDate()
-};
-
-//execute validation
-var promise = businessRules.Validate();
-
-promise.then(function (result) {
-    //verify results
-    displayErrors(businessRules.Errors, 0);
-}, function (reason) {
-    console.log(reason);
-}).then(function () {
-    //fill additional fields
-    data.Employee.LastName = "Smith";
-
-    data.Deputy1.FirstName = "John";
-    data.Deputy1.LastName = "Smith";
-    data.Deputy1.Email = "jsmith@gmail.com";
-
-    data.Duration.From = moment(new Date()).add({ days: 1 }).toDate();
-    data.Duration.To = moment(new Date()).add({ days: 3 }).toDate();
+    //fill some fields
+    data.Employee = {
+        FirstName: "John",
+        LastName: "Smith toooooooooooooooooooooooooo long"
+    };
+    data.Duration = {
+        From: moment(new Date()).add({ days: -1 }).toDate(),
+        To: moment(new Date()).add({ days: -10 }).toDate()
+    };
 
     //execute validation
     var promise = businessRules.Validate();
 
-    promise.then(function (result) {
+    return promise.then(function (result) {
         //verify results
         displayErrors(businessRules.Errors, 0);
     }, function (reason) {
         console.log(reason);
+    }).then(function () {
+        //fill additional fields
+        data.Employee.LastName = "Smith";
+
+        data.Deputy1.FirstName = "John";
+        data.Deputy1.LastName = "Smith";
+        data.Deputy1.Email = "jsmith@gmail.com";
+
+        data.Duration.From = moment(new Date()).add({ days: 1 }).toDate();
+        data.Duration.To = moment(new Date()).add({ days: 3 }).toDate();
+
+        //execute validation
+        var promise = businessRules.Validate();
+
+        return promise.then(function (result) {
+            //verify results
+            displayErrors(businessRules.Errors, 0);
+        }, function (reason) {
+            console.log(reason);
+        });
     });
+};
+
+execFce('en').then(function () {
+    return execFce('de');
+}).then(function () {
+    return execFce('cz');
 });
+//# sourceMappingURL=index.js.map
