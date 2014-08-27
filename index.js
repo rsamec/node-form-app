@@ -14,7 +14,7 @@ var Utils = require("business-rules-engine/commonjs/Utils");
 
 var i18n = require('i18n-2');
 var en = require('business-rules-engine/commonjs/i18n/messages_en.js');
-var cz = require('business-rules-engine/commonjs/i18n/messages_cs.js');
+var cz = require('business-rules-engine/commonjs/i18n/messages_cz.js');
 var de = require('business-rules-engine/commonjs/i18n/messages_de.js');
 
 /**
