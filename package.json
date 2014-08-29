@@ -4,11 +4,13 @@
   "description": "Demo for form validation engine",
   "main": "index.js",
   "dependencies": {
+    "br-hobbies": "^1.1.0",
     "br-vacation-approval": "^1.0.4",
     "business-rules-engine": "^1.0.25",
     "i18n-2": "^0.4.6",
     "moment": "^2.7.0",
     "moment-range": "^1.0.2",
+    "mongoose": "^3.8.15",
     "q": "^1.0.1",
     "underscore": "^1.6.0"
   },
